@@ -1,0 +1,8 @@
+{
+  "$schema": "../schemas/project-input.schema.json",
+  "constraints": [
+    "State only constraints that materially affect planning or engineering"
+  ],
+  "description": "A brief technology-neutral description of the problem, users, and intended outcome.",
+  "name": "Example Project Name"
+}

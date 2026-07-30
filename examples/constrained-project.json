@@ -1,0 +1,9 @@
+{
+  "constraints": [
+    "Must support long pauses and handoff across independent teams",
+    "Must document privacy, accessibility, recovery, and supply-chain requirements",
+    "Technology choices require an ADR backed by primary-source research"
+  ],
+  "description": "Prepare an implementation-ready planning foundation for a high-assurance multi-team software initiative.",
+  "name": "Constrained Reference Foundation"
+}

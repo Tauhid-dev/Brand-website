@@ -1,0 +1,33 @@
+# ADR-0001: Establish the architecture decision process
+
+- Status: Accepted
+- Date: {{GENERATED_AT}}
+- Project: {{PROJECT_NAME}}
+
+## Context
+
+Architecture decisions must survive staff changes, long pauses, and lost chat
+context. Material choices need their constraints, options, consequences, and
+replacement conditions preserved near the work.
+
+## Decision
+
+Use immutable, sequential ADRs. A later ADR supersedes rather than edits the
+meaning of an accepted decision. Decisions include evidence, affected artifacts,
+security impact, migration, rollback, and review trigger.
+
+## Consequences
+
+Decision rationale is reviewable and resumable. Authors incur a small documentation
+cost and must keep references current.
+
+## Alternatives considered
+
+- Conversation history: rejected because it is unavailable and unversioned.
+- A single mutable architecture document: retained for the current view but not
+  sufficient as a decision history.
+
+## Review trigger
+
+Review when requirements, constraints, risk, or material evidence invalidates an
+assumption.

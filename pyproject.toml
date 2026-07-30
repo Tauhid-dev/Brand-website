@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "project-genesis-framework"
+version = "1.0.0"
+description = "Deterministic planning and engineering foundation generator"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Project Genesis contributors"}]
+dependencies = []
+
+[project.scripts]
+genesis = "generators.cli:main"
+
+[tool.setuptools]
+packages = ["generators", "generators.engines", "validators"]
+
+[tool.unittest]
+start-directory = "tests"
