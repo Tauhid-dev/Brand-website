@@ -1,0 +1,448 @@
+{
+  "engines": [
+    {
+      "dependencies": [],
+      "engine_id": "doctrine",
+      "extension_points": [
+        "organisation overlays",
+        "regulated profiles"
+      ],
+      "inputs": [
+        "ProjectSpec",
+        "GenerationContext"
+      ],
+      "outputs": [
+        "governance/"
+      ],
+      "responsibilities": [
+        "install non-negotiable governance",
+        "tailor doctrine without weakening it"
+      ],
+      "title": "Engineering Doctrine Engine",
+      "validation": [
+        "constitution precedence",
+        "doctrine coverage"
+      ]
+    },
+    {
+      "dependencies": [],
+      "engine_id": "planning",
+      "extension_points": [
+        "additional templates",
+        "policy hooks"
+      ],
+      "inputs": [
+        "ProjectSpec",
+        "GenerationContext"
+      ],
+      "outputs": [
+        "planning/"
+      ],
+      "responsibilities": [
+        "translate intent into outcomes",
+        "define traceable requirements",
+        "sequence milestones"
+      ],
+      "title": "Planning Engine",
+      "validation": [
+        "required sections",
+        "resolved placeholders"
+      ]
+    },
+    {
+      "dependencies": [
+        "planning"
+      ],
+      "engine_id": "architecture",
+      "extension_points": [
+        "architecture styles",
+        "technology decision adapters",
+        "additional views"
+      ],
+      "inputs": [
+        "ProjectSpec",
+        "GenerationContext"
+      ],
+      "outputs": [
+        "architecture/architecture.md",
+        "architecture/decisions/"
+      ],
+      "responsibilities": [
+        "define boundaries and quality attributes",
+        "record dependency rules",
+        "own ADRs"
+      ],
+      "title": "Architecture Engine",
+      "validation": [
+        "architecture validator",
+        "ADR completeness",
+        "dependency direction"
+      ]
+    },
+    {
+      "dependencies": [
+        "planning"
+      ],
+      "engine_id": "domain",
+      "extension_points": [
+        "event storming",
+        "domain-specific modelling profiles"
+      ],
+      "inputs": [
+        "ProjectSpec",
+        "GenerationContext"
+      ],
+      "outputs": [
+        "architecture/domain-model.md"
+      ],
+      "responsibilities": [
+        "establish ubiquitous language",
+        "identify bounded contexts",
+        "separate policy from plumbing"
+      ],
+      "title": "Domain Modelling Engine",
+      "validation": [
+        "term definitions",
+        "ownership boundaries",
+        "invariant traceability"
+      ]
+    },
+    {
+      "dependencies": [
+        "planning",
+        "doctrine"
+      ],
+      "engine_id": "prompt",
+      "extension_points": [
+        "model-specific adapters",
+        "organisation prompt overlays"
+      ],
+      "inputs": [
+        "ProjectSpec",
+        "GenerationContext"
+      ],
+      "outputs": [
+        "prompts/project-bootstrap.md"
+      ],
+      "responsibilities": [
+        "produce context-independent execution prompts",
+        "embed evidence and stop conditions"
+      ],
+      "title": "Prompt Generation Engine",
+      "validation": [
+        "prompt input contract",
+        "no chat-context dependency"
+      ]
+    },
+    {
+      "dependencies": [
+        "planning"
+      ],
+      "engine_id": "research",
+      "extension_points": [
+        "source connectors",
+        "domain research profiles"
+      ],
+      "inputs": [
+        "ProjectSpec",
+        "GenerationContext"
+      ],
+      "outputs": [
+        "research/research.md"
+      ],
+      "responsibilities": [
+        "track questions and evidence",
+        "separate facts, assumptions, and decisions"
+      ],
+      "title": "Research Engine",
+      "validation": [
+        "source provenance",
+        "confidence and review dates"
+      ]
+    },
+    {
+      "dependencies": [
+        "architecture",
+        "domain"
+      ],
+      "engine_id": "diagram",
+      "extension_points": [
+        "custom diagram definitions",
+        "external Mermaid renderer"
+      ],
+      "inputs": [
+        "ProjectSpec",
+        "GenerationContext"
+      ],
+      "outputs": [
+        "architecture/diagrams/*.mmd",
+        "architecture/diagrams/*.svg"
+      ],
+      "responsibilities": [
+        "emit ten required architecture views",
+        "render Mermaid-authoritative SVG derivatives"
+      ],
+      "title": "Diagram Engine",
+      "validation": [
+        "Mermaid syntax subset",
+        "source hash parity",
+        "edge integrity"
+      ]
+    },
+    {
+      "dependencies": [
+        "planning",
+        "architecture"
+      ],
+      "engine_id": "documentation",
+      "extension_points": [
+        "publishing adapters",
+        "documentation profiles"
+      ],
+      "inputs": [
+        "ProjectSpec",
+        "GenerationContext"
+      ],
+      "outputs": [
+        "README.md"
+      ],
+      "responsibilities": [
+        "create navigable project entry points",
+        "maintain cross-references and audience clarity"
+      ],
+      "title": "Documentation Engine",
+      "validation": [
+        "link integrity",
+        "required navigation"
+      ]
+    },
+    {
+      "dependencies": [
+        "planning",
+        "architecture"
+      ],
+      "engine_id": "security",
+      "extension_points": [
+        "threat modelling methods",
+        "compliance profiles"
+      ],
+      "inputs": [
+        "ProjectSpec",
+        "GenerationContext"
+      ],
+      "outputs": [
+        "security/",
+        "risks/"
+      ],
+      "responsibilities": [
+        "model threats and trust boundaries",
+        "define privacy and supply-chain controls",
+        "own risk treatment"
+      ],
+      "title": "Security Engine",
+      "validation": [
+        "security controls",
+        "risk ownership",
+        "abuse cases"
+      ]
+    },
+    {
+      "dependencies": [
+        "planning",
+        "architecture"
+      ],
+      "engine_id": "skills",
+      "extension_points": [
+        "runtime skill registries",
+        "domain skill packs"
+      ],
+      "inputs": [
+        "ProjectSpec",
+        "GenerationContext"
+      ],
+      "outputs": [
+        "skills/project-skills.md"
+      ],
+      "responsibilities": [
+        "recommend reusable capabilities",
+        "make use and non-use boundaries explicit"
+      ],
+      "title": "Skills Engine",
+      "validation": [
+        "skill contract completeness",
+        "dependency declarations"
+      ]
+    },
+    {
+      "dependencies": [
+        "planning",
+        "architecture"
+      ],
+      "engine_id": "validation",
+      "extension_points": [
+        "custom validators",
+        "policy severity profiles"
+      ],
+      "inputs": [
+        "ProjectSpec",
+        "GenerationContext"
+      ],
+      "outputs": [
+        "quality/validation-plan.md"
+      ],
+      "responsibilities": [
+        "define validation scope",
+        "aggregate actionable findings"
+      ],
+      "title": "Validation Engine",
+      "validation": [
+        "validator registry",
+        "zero-error release gate"
+      ]
+    },
+    {
+      "dependencies": [
+        "planning",
+        "architecture",
+        "security"
+      ],
+      "engine_id": "chunk",
+      "extension_points": [
+        "estimation policies",
+        "additional chunk strategies"
+      ],
+      "inputs": [
+        "ProjectSpec",
+        "GenerationContext"
+      ],
+      "outputs": [
+        "chunks/"
+      ],
+      "responsibilities": [
+        "create bounded context-free work",
+        "order work by explicit dependencies"
+      ],
+      "title": "Chunk Planning Engine",
+      "validation": [
+        "chunk schema",
+        "acyclic graph",
+        "required reading and evidence"
+      ]
+    },
+    {
+      "dependencies": [
+        "validation",
+        "security"
+      ],
+      "engine_id": "quality",
+      "extension_points": [
+        "quality profiles",
+        "risk-based thresholds"
+      ],
+      "inputs": [
+        "ProjectSpec",
+        "GenerationContext"
+      ],
+      "outputs": [
+        "quality/quality-gates.md",
+        "quality/completion-evidence.md"
+      ],
+      "responsibilities": [
+        "define measurable gates",
+        "require evidence before completion"
+      ],
+      "title": "Quality Engine",
+      "validation": [
+        "gate owner and evidence",
+        "waiver expiry"
+      ]
+    },
+    {
+      "dependencies": [
+        "planning",
+        "architecture",
+        "security"
+      ],
+      "engine_id": "testing",
+      "extension_points": [
+        "technology test adapters",
+        "performance and accessibility profiles"
+      ],
+      "inputs": [
+        "ProjectSpec",
+        "GenerationContext"
+      ],
+      "outputs": [
+        "quality/testing.md"
+      ],
+      "responsibilities": [
+        "design layered tests",
+        "trace requirements to executable evidence"
+      ],
+      "title": "Testing Engine",
+      "validation": [
+        "test pyramid",
+        "negative paths",
+        "non-functional evidence"
+      ]
+    },
+    {
+      "dependencies": [
+        "quality",
+        "testing",
+        "chunk"
+      ],
+      "engine_id": "delivery",
+      "extension_points": [
+        "platform adapters",
+        "release strategies"
+      ],
+      "inputs": [
+        "ProjectSpec",
+        "GenerationContext"
+      ],
+      "outputs": [
+        "delivery/delivery-plan.md"
+      ],
+      "responsibilities": [
+        "plan promotion, operations, rollback, and ownership",
+        "close the feedback loop"
+      ],
+      "title": "Delivery Engine",
+      "validation": [
+        "rollback rehearsal",
+        "observability",
+        "release evidence"
+      ]
+    },
+    {
+      "dependencies": [
+        "chunk"
+      ],
+      "engine_id": "memory",
+      "extension_points": [
+        "external state stores",
+        "retention policies"
+      ],
+      "inputs": [
+        "ProjectSpec",
+        "GenerationContext"
+      ],
+      "outputs": [
+        "memory/"
+      ],
+      "responsibilities": [
+        "persist current state and decisions",
+        "provide a single resume cursor",
+        "support long pauses"
+      ],
+      "title": "Memory Engine",
+      "validation": [
+        "resume validator",
+        "single next action",
+        "chunk-state consistency"
+      ]
+    }
+  ],
+  "schema_version": "1"
+}

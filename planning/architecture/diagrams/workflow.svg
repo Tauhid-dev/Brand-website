@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="298" viewBox="0 0 920 298" role="img">
+  <metadata>mermaid-source-sha256:62def3513dad508161fefeb19450a2a50384b95e7cf917972e7b75313eadd1fe</metadata>
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#4b6484"/></marker></defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <line x1="150.0" y1="72.0" x2="460.0" y2="72.0" stroke="#4b6484" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="305.0" y="65.0" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#334155">authorize</text>
+  <line x1="460.0" y1="72.0" x2="770.0" y2="72.0" stroke="#4b6484" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="615.0" y="65.0" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#334155">allow</text>
+  <line x1="770.0" y1="72.0" x2="150.0" y2="226.0" stroke="#4b6484" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="460.0" y="142.0" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#334155">commit</text>
+  <line x1="150.0" y1="226.0" x2="460.0" y2="226.0" stroke="#4b6484" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="305.0" y="219.0" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#334155">report</text>
+  <rect id="request" x="40" y="40" width="220" height="64" rx="8" fill="#eef4ff" stroke="#2457a6" stroke-width="2"/>
+  <text x="150.0" y="76.0" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#10233f">Validated request</text>
+  <rect id="authorize" x="350" y="40" width="220" height="64" rx="8" fill="#eef4ff" stroke="#2457a6" stroke-width="2"/>
+  <text x="460.0" y="76.0" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#10233f">Policy check</text>
+  <rect id="execute" x="660" y="40" width="220" height="64" rx="8" fill="#eef4ff" stroke="#2457a6" stroke-width="2"/>
+  <text x="770.0" y="76.0" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#10233f">Domain execution</text>
+  <rect id="persist" x="40" y="194" width="220" height="64" rx="8" fill="#eef4ff" stroke="#2457a6" stroke-width="2"/>
+  <text x="150.0" y="230.0" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#10233f">Atomic persistence</text>
+  <rect id="observe" x="350" y="194" width="220" height="64" rx="8" fill="#eef4ff" stroke="#2457a6" stroke-width="2"/>
+  <text x="460.0" y="230.0" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#10233f">Outcome and telemetry</text>
+</svg>

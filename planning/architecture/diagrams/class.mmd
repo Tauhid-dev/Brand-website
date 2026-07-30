@@ -1,0 +1,15 @@
+---
+title: "Class Responsibilities — AI-Magnet"
+---
+flowchart TD
+    controller["Interface adapter"]
+    service["Application service"]
+    aggregate["Aggregate root"]
+    repository["Repository port"]
+    implementation["Repository adapter"]
+    controller -->|"invokes"| service
+    service -->|"coordinates"| aggregate
+    service -->|"uses"| repository
+    implementation -->|"implements"| repository
+    classDef genesis fill:#eef4ff,stroke:#2457a6,color:#10233f
+    class controller,service,aggregate,repository,implementation genesis

@@ -1,0 +1,16 @@
+---
+title: "Chunk Dependency Graph — AI-Magnet"
+---
+flowchart TD
+    c001["C001 Foundation"]
+    c002["C002 Domain discovery"]
+    c003["C003 Architecture and risk"]
+    c004["C004 Delivery plan"]
+    c005["C005 Readiness review"]
+    c001 -->|"enables"| c002
+    c001 -->|"enables"| c003
+    c002 -->|"informs"| c004
+    c003 -->|"constrains"| c004
+    c004 -->|"precedes"| c005
+    classDef genesis fill:#eef4ff,stroke:#2457a6,color:#10233f
+    class c001,c002,c003,c004,c005 genesis

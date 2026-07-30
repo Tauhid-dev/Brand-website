@@ -1,0 +1,15 @@
+---
+title: "Domain View — AI-Magnet"
+---
+flowchart LR
+    actor["Actor"]
+    capability["Core capability"]
+    entity["Domain entity"]
+    policy["Domain policy"]
+    event["Domain event"]
+    actor -->|"requests"| capability
+    capability -->|"acts on"| entity
+    policy -->|"governs"| capability
+    entity -->|"emits"| event
+    classDef genesis fill:#eef4ff,stroke:#2457a6,color:#10233f
+    class actor,capability,entity,policy,event genesis

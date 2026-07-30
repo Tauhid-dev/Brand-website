@@ -1,0 +1,67 @@
+{
+  "chunks": [
+    {
+      "dependencies": [],
+      "id": "C001",
+      "outputs": [
+        "planning/product-vision.md",
+        "planning/requirements.md",
+        "memory/CURRENT_STATE.md"
+      ],
+      "purpose": "Confirm outcomes, stakeholders, vocabulary, constraints, and measurable boundaries.",
+      "title": "Foundation and discovery baseline"
+    },
+    {
+      "dependencies": [
+        "C001"
+      ],
+      "id": "C002",
+      "outputs": [
+        "architecture/domain-model.md",
+        "planning/acceptance-criteria.md"
+      ],
+      "purpose": "Refine domain boundaries, requirements, acceptance criteria, and traceability.",
+      "title": "Domain and requirements elaboration"
+    },
+    {
+      "dependencies": [
+        "C001"
+      ],
+      "id": "C003",
+      "outputs": [
+        "architecture/architecture.md",
+        "security/security.md",
+        "research/research.md"
+      ],
+      "purpose": "Validate architecture options, threats, privacy obligations, risks, and decisions.",
+      "title": "Architecture, security, and research"
+    },
+    {
+      "dependencies": [
+        "C002",
+        "C003"
+      ],
+      "id": "C004",
+      "outputs": [
+        "quality/testing.md",
+        "delivery/delivery-plan.md",
+        "planning/roadmap.md"
+      ],
+      "purpose": "Define test evidence, deployment, observability, rollback, and delivery sequencing.",
+      "title": "Testing and delivery design"
+    },
+    {
+      "dependencies": [
+        "C004"
+      ],
+      "id": "C005",
+      "outputs": [
+        "quality/completion-evidence.md",
+        "memory/SESSION_HANDOFF.md"
+      ],
+      "purpose": "Run all quality gates and leave complete evidence and a context-free next action.",
+      "title": "Readiness and handoff review"
+    }
+  ],
+  "schema_version": "1"
+}

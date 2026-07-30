@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="298" viewBox="0 0 920 298" role="img">
+  <metadata>mermaid-source-sha256:548fa1b6f76ad5c98734ea68709c4bb765975f04ef6c0485fca36526dbc0e34e</metadata>
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#4b6484"/></marker></defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <line x1="150.0" y1="72.0" x2="460.0" y2="72.0" stroke="#4b6484" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="305.0" y="65.0" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#334155">routes authenticated traffic</text>
+  <line x1="460.0" y1="72.0" x2="770.0" y2="72.0" stroke="#4b6484" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="615.0" y="65.0" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#334155">uses least privilege</text>
+  <line x1="460.0" y1="72.0" x2="150.0" y2="226.0" stroke="#4b6484" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="305.0" y="142.0" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#334155">emits signals</text>
+  <line x1="460.0" y1="226.0" x2="460.0" y2="72.0" stroke="#4b6484" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="460.0" y="142.0" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#334155">promotes verified artifact</text>
+  <rect id="edge" x="40" y="40" width="220" height="64" rx="8" fill="#eef4ff" stroke="#2457a6" stroke-width="2"/>
+  <text x="150.0" y="76.0" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#10233f">Trusted entry point</text>
+  <rect id="runtime" x="350" y="40" width="220" height="64" rx="8" fill="#eef4ff" stroke="#2457a6" stroke-width="2"/>
+  <text x="460.0" y="76.0" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#10233f">Application runtime</text>
+  <rect id="data" x="660" y="40" width="220" height="64" rx="8" fill="#eef4ff" stroke="#2457a6" stroke-width="2"/>
+  <text x="770.0" y="76.0" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#10233f">Managed data boundary</text>
+  <rect id="observability" x="40" y="194" width="220" height="64" rx="8" fill="#eef4ff" stroke="#2457a6" stroke-width="2"/>
+  <text x="150.0" y="230.0" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#10233f">Observability</text>
+  <rect id="delivery" x="350" y="194" width="220" height="64" rx="8" fill="#eef4ff" stroke="#2457a6" stroke-width="2"/>
+  <text x="460.0" y="230.0" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#10233f">Delivery pipeline</text>
+</svg>

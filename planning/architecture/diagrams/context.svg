@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="298" viewBox="0 0 920 298" role="img">
+  <metadata>mermaid-source-sha256:6a82d0e0d0e6da2b167205ab3034e7463606b9be7862582e3bb0e4869d4159b5</metadata>
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#4b6484"/></marker></defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <line x1="150.0" y1="72.0" x2="460.0" y2="72.0" stroke="#4b6484" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="305.0" y="65.0" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#334155">achieves outcomes through</text>
+  <line x1="460.0" y1="72.0" x2="770.0" y2="72.0" stroke="#4b6484" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="615.0" y="65.0" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#334155">exchanges approved data with</text>
+  <line x1="150.0" y1="226.0" x2="460.0" y2="72.0" stroke="#4b6484" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="305.0" y="142.0" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#334155">operates and observes</text>
+  <rect id="stakeholder" x="40" y="40" width="220" height="64" rx="8" fill="#eef4ff" stroke="#2457a6" stroke-width="2"/>
+  <text x="150.0" y="76.0" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#10233f">Primary stakeholder</text>
+  <rect id="system" x="350" y="40" width="220" height="64" rx="8" fill="#eef4ff" stroke="#2457a6" stroke-width="2"/>
+  <text x="460.0" y="76.0" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#10233f">AI-Magnet</text>
+  <rect id="external" x="660" y="40" width="220" height="64" rx="8" fill="#eef4ff" stroke="#2457a6" stroke-width="2"/>
+  <text x="770.0" y="76.0" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#10233f">External systems</text>
+  <rect id="operator" x="40" y="194" width="220" height="64" rx="8" fill="#eef4ff" stroke="#2457a6" stroke-width="2"/>
+  <text x="150.0" y="230.0" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#10233f">Operators</text>
+</svg>

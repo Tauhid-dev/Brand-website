@@ -1,0 +1,18 @@
+---
+title: "Planning Status — AI-Magnet"
+---
+flowchart LR
+    planned["Planned"]
+    ready["Ready"]
+    active["In progress"]
+    blocked["Blocked"]
+    verified["Verified"]
+    done["Complete"]
+    planned -->|"gates pass"| ready
+    ready -->|"work starts"| active
+    active -->|"impediment"| blocked
+    blocked -->|"resolved"| ready
+    active -->|"evidence accepted"| verified
+    verified -->|"memory updated"| done
+    classDef genesis fill:#eef4ff,stroke:#2457a6,color:#10233f
+    class planned,ready,active,blocked,verified,done genesis

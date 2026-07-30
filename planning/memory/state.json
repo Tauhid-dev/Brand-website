@@ -1,0 +1,15 @@
+{
+  "chunks": {
+    "C001": "ready",
+    "C002": "planned",
+    "C003": "planned",
+    "C004": "planned",
+    "C005": "planned"
+  },
+  "current_chunk": "C001",
+  "last_updated": "1970-01-01T00:00:00Z",
+  "next_action": "Execute C001 using chunks/C001.md and record completion evidence.",
+  "project_id": "b2e195c00813e779",
+  "schema_version": "1",
+  "status": "ready"
+}

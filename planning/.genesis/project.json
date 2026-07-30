@@ -1,0 +1,10 @@
+{
+  "constraints": [
+    "WCAG 2.2 AA and strong Core Web Vitals",
+    "Australian English, AUD pricing plus GST, and ethical review practices",
+    "Central configuration must support a future rebrand",
+    "Forms must be honest, privacy-preserving, validated, and adapter-based"
+  ],
+  "description": "A production-quality Australian local-business growth system marketing and sales website covering services, pricing, industry pages, an interactive AI receptionist demonstration, and validated lead-capture flows.",
+  "name": "AI-Magnet"
+}
