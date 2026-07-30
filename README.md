@@ -1,5 +1,11 @@
 # Project Genesis Framework
 
+> **Project implementation:** This repository now also contains the AI-Magnet
+> public marketing site in [`site/`](site/) and its generated, validated
+> Genesis planning foundation in [`planning/`](planning/). See
+> [`docs/AI_MAGNET_SITE.md`](docs/AI_MAGNET_SITE.md) for brand configuration,
+> development, integration, SEO, deployment and launch guidance.
+
 Project Genesis is a reusable, deterministic foundation generator for serious
 software projects. Given only a project name, a brief description, and optional
 constraints, it creates a versioned planning repository with requirements,

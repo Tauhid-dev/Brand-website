@@ -1,0 +1,15 @@
+---
+title: "Container View — AI-Magnet"
+---
+flowchart LR
+    channel["Delivery channel"]
+    interface["Application interface"]
+    core["Domain core"]
+    store["Data store"]
+    integration["Integration adapters"]
+    channel -->|"invokes"| interface
+    interface -->|"coordinates"| core
+    core -->|"persists through ports"| store
+    core -->|"integrates through ports"| integration
+    classDef genesis fill:#eef4ff,stroke:#2457a6,color:#10233f
+    class channel,interface,core,store,integration genesis

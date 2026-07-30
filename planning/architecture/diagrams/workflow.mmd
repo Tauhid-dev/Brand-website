@@ -1,0 +1,15 @@
+---
+title: "Primary Workflow — AI-Magnet"
+---
+flowchart LR
+    request["Validated request"]
+    authorize["Policy check"]
+    execute["Domain execution"]
+    persist["Atomic persistence"]
+    observe["Outcome and telemetry"]
+    request -->|"authorize"| authorize
+    authorize -->|"allow"| execute
+    execute -->|"commit"| persist
+    persist -->|"report"| observe
+    classDef genesis fill:#eef4ff,stroke:#2457a6,color:#10233f
+    class request,authorize,execute,persist,observe genesis

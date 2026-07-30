@@ -1,0 +1,15 @@
+---
+title: "Deployment View — AI-Magnet"
+---
+flowchart LR
+    edge["Trusted entry point"]
+    runtime["Application runtime"]
+    data["Managed data boundary"]
+    observability["Observability"]
+    delivery["Delivery pipeline"]
+    edge -->|"routes authenticated traffic"| runtime
+    runtime -->|"uses least privilege"| data
+    runtime -->|"emits signals"| observability
+    delivery -->|"promotes verified artifact"| runtime
+    classDef genesis fill:#eef4ff,stroke:#2457a6,color:#10233f
+    class edge,runtime,data,observability,delivery genesis

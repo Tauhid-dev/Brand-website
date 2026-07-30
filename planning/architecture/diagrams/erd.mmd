@@ -1,0 +1,13 @@
+---
+title: "Conceptual Data Model — AI-Magnet"
+---
+flowchart LR
+    aggregate["Aggregate"]
+    record["Domain record"]
+    event["Audit event"]
+    reference["Reference data"]
+    aggregate -->|"owns"| record
+    aggregate -->|"produces"| event
+    record -->|"references"| reference
+    classDef genesis fill:#eef4ff,stroke:#2457a6,color:#10233f
+    class aggregate,record,event,reference genesis

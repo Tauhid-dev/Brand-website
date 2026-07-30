@@ -1,0 +1,17 @@
+---
+title: "Module View — AI-Magnet"
+---
+flowchart LR
+    presentation["Presentation"]
+    application["Application"]
+    domain["Domain"]
+    ports["Ports"]
+    adapters["Adapters"]
+    platform["Platform"]
+    presentation -->|"calls"| application
+    application -->|"orchestrates"| domain
+    application -->|"depends on"| ports
+    adapters -->|"implements"| ports
+    adapters -->|"uses"| platform
+    classDef genesis fill:#eef4ff,stroke:#2457a6,color:#10233f
+    class presentation,application,domain,ports,adapters,platform genesis

@@ -1,0 +1,333 @@
+{
+  "artifacts": [
+    {
+      "owner": "pipeline",
+      "path": ".genesis/engine-catalog.json",
+      "sha256": "fed6a405c4cdf80e68cd0c9922a9403420ebf481f70618c216bd8f8afb136d1f"
+    },
+    {
+      "owner": "pipeline",
+      "path": ".genesis/project.json",
+      "sha256": "d35779587a85e11790ce7fbf4da68b2f7ca7449a4944be8af276b59f81a24ee4"
+    },
+    {
+      "owner": "documentation",
+      "path": "README.md",
+      "sha256": "e8165d078023f6f0451a4794a2193b386aa6a6063a4925581cc3652ecdc91029"
+    },
+    {
+      "owner": "architecture",
+      "path": "architecture/architecture.md",
+      "sha256": "dd18e67b856bbbaffbb411922e87c3affae427ed99fdc2c2d316b1cdc91bd0ab"
+    },
+    {
+      "owner": "architecture",
+      "path": "architecture/decisions/ADR-0001-foundation.md",
+      "sha256": "d3dc13a76143d34f0ea73986e2ad5d675b4bfe9a1f05370ed80cb9bfed3cf7d9"
+    },
+    {
+      "owner": "diagram",
+      "path": "architecture/diagrams/chunk-dependency.mmd",
+      "sha256": "c8040d2c57126d6f9589320275bc7ea68004990e506c3c39fbb14f05d1503d37"
+    },
+    {
+      "owner": "diagram",
+      "path": "architecture/diagrams/chunk-dependency.svg",
+      "sha256": "d76cbb1bcfea0992e6ce070fa39d9b62d8e7745afc181de2eb759a122264e3c0"
+    },
+    {
+      "owner": "diagram",
+      "path": "architecture/diagrams/class.mmd",
+      "sha256": "5193f1c001c764d70e0c8b5dc854a36ff00fa7cbfd820902b239d0a5eae3ad0e"
+    },
+    {
+      "owner": "diagram",
+      "path": "architecture/diagrams/class.svg",
+      "sha256": "00c2da2d4526231c102d1fe6c2fb8646ea0cbfed68786a8353a821a2bad15416"
+    },
+    {
+      "owner": "diagram",
+      "path": "architecture/diagrams/container.mmd",
+      "sha256": "2c9b0f96f405a7ed40f9dad7153ef142280bdb7071323e77b1ad838280aa0871"
+    },
+    {
+      "owner": "diagram",
+      "path": "architecture/diagrams/container.svg",
+      "sha256": "dd5097078e800ec4851aee2f0554084b4618c0dc912a7a80819c9335a538c999"
+    },
+    {
+      "owner": "diagram",
+      "path": "architecture/diagrams/context.mmd",
+      "sha256": "6a82d0e0d0e6da2b167205ab3034e7463606b9be7862582e3bb0e4869d4159b5"
+    },
+    {
+      "owner": "diagram",
+      "path": "architecture/diagrams/context.svg",
+      "sha256": "7dcc05bdb66f1af325418d5c8e1a414f0983cb69b3d3baeae92ac3197390f165"
+    },
+    {
+      "owner": "diagram",
+      "path": "architecture/diagrams/dependency.mmd",
+      "sha256": "ef25496bd1e45d317c89c9b2512ba15711b68d9d243b28fbe3e1b99e9e44cc37"
+    },
+    {
+      "owner": "diagram",
+      "path": "architecture/diagrams/dependency.svg",
+      "sha256": "497c9463afd6340ef65ef2aedf4ab9b6a7bfd12859b268548888eb9d7c6c5cb8"
+    },
+    {
+      "owner": "diagram",
+      "path": "architecture/diagrams/deployment.mmd",
+      "sha256": "548fa1b6f76ad5c98734ea68709c4bb765975f04ef6c0485fca36526dbc0e34e"
+    },
+    {
+      "owner": "diagram",
+      "path": "architecture/diagrams/deployment.svg",
+      "sha256": "02e5c92428a608179a8fc90fa0fff9679de05cb24c64268b49ed41eb30229d62"
+    },
+    {
+      "owner": "diagram",
+      "path": "architecture/diagrams/domain.mmd",
+      "sha256": "772ad4b225833e6c85ccfc972726766cfa790f035dc8cdddb888889956fc8e9e"
+    },
+    {
+      "owner": "diagram",
+      "path": "architecture/diagrams/domain.svg",
+      "sha256": "3a2025f6e7f19680287cb6a98a2c5dd98e71213a8b59845fc80cabcbd863d1b1"
+    },
+    {
+      "owner": "diagram",
+      "path": "architecture/diagrams/erd.mmd",
+      "sha256": "b26966eeca76dd215572a071ef00b13621703cbdc3574473582db50040410fec"
+    },
+    {
+      "owner": "diagram",
+      "path": "architecture/diagrams/erd.svg",
+      "sha256": "45135c30bfffca99ec9df93a8094f1d0903570f2f8690ef588246642e1a388b2"
+    },
+    {
+      "owner": "diagram",
+      "path": "architecture/diagrams/module.mmd",
+      "sha256": "b23c15f7279d47e243dcc8f9a1cef29321c90e116e117605fe76004ecaaa0d02"
+    },
+    {
+      "owner": "diagram",
+      "path": "architecture/diagrams/module.svg",
+      "sha256": "fbb3a8f0a31065a4890176d794eecff85f469b2c8506017bb553e9504609fff5"
+    },
+    {
+      "owner": "diagram",
+      "path": "architecture/diagrams/status.mmd",
+      "sha256": "e5a9076bfd684a7ca276805a718b8c7fa4d7094ee8d78151a547294a512a7a88"
+    },
+    {
+      "owner": "diagram",
+      "path": "architecture/diagrams/status.svg",
+      "sha256": "dd4c07106bb623812ed64c35ea6760fa920adf74e0fb6bb8b6ecadb72c281a4b"
+    },
+    {
+      "owner": "diagram",
+      "path": "architecture/diagrams/workflow.mmd",
+      "sha256": "62def3513dad508161fefeb19450a2a50384b95e7cf917972e7b75313eadd1fe"
+    },
+    {
+      "owner": "diagram",
+      "path": "architecture/diagrams/workflow.svg",
+      "sha256": "bedc2ae2b67f93d32a364b3792b64b54973efaf978044c7191112eb29d19b384"
+    },
+    {
+      "owner": "domain",
+      "path": "architecture/domain-model.md",
+      "sha256": "986e2d588c90b28bd82af727db34b2a2fda10a6509ed0367e0f02a4a482ead4d"
+    },
+    {
+      "owner": "chunk",
+      "path": "chunks/C001.md",
+      "sha256": "988cbfe287a33219b0e49ce3d67928042ec0b92a690a77b62b41220f10371a75"
+    },
+    {
+      "owner": "chunk",
+      "path": "chunks/C002.md",
+      "sha256": "fb4ed55818d31dfd2bdfc8b51ff2849143cdc3cbbc9923cfa6da29c5ed17bffe"
+    },
+    {
+      "owner": "chunk",
+      "path": "chunks/C003.md",
+      "sha256": "0a69b3ac8e3067339e95d89b2fd6a189b5663e3221c50d6300bb139d61765b04"
+    },
+    {
+      "owner": "chunk",
+      "path": "chunks/C004.md",
+      "sha256": "ca61146e77a00f000171d9c734d2a67afd021974b39cf43a4f83e931e91033cd"
+    },
+    {
+      "owner": "chunk",
+      "path": "chunks/C005.md",
+      "sha256": "a9c0868dc18baeb6ee4ae00a9ccc688cabacc6fc3cb43c8457cd5b3a19522ffc"
+    },
+    {
+      "owner": "chunk",
+      "path": "chunks/index.json",
+      "sha256": "6c31592893e19ed20e15bdb10419c225a64d407bacdd7fc05e33832034d062e6"
+    },
+    {
+      "owner": "delivery",
+      "path": "delivery/delivery-plan.md",
+      "sha256": "2efc973034e30634479ed9ff70b89a56e99e02020dd0951ec1b31061c1937093"
+    },
+    {
+      "owner": "doctrine",
+      "path": "governance/engineering-doctrine.md",
+      "sha256": "6ba958e488ad3e213239f72556eb6e21a70a04249a3cbede559874c697ee6f5d"
+    },
+    {
+      "owner": "doctrine",
+      "path": "governance/project-constitution.md",
+      "sha256": "f3ea120405d33e11260563d980dafe8c7627eb928acc6321dfbc12bc39dd67d1"
+    },
+    {
+      "owner": "memory",
+      "path": "memory/CURRENT_STATE.md",
+      "sha256": "8608700ca2e8560715136914d8a12fe1c24394770c127fd99e8f1211d7069991"
+    },
+    {
+      "owner": "memory",
+      "path": "memory/DECISION_SUMMARY.md",
+      "sha256": "bac90eddc9174f06be737ccd57ab4ce436e336217d32c7ba40acdc8cc4b2d044"
+    },
+    {
+      "owner": "memory",
+      "path": "memory/NEXT_ACTION.md",
+      "sha256": "271cfa0c48b3d6d5d1b8f1bdfa3cd8bbb6d68ebd9364123a9f13ecb69b00ad68"
+    },
+    {
+      "owner": "memory",
+      "path": "memory/PROGRESS_HISTORY.md",
+      "sha256": "7152b23273409b359d23ae3075cf67ef36f8a10d11705e71ecaf73c56c94f59a"
+    },
+    {
+      "owner": "memory",
+      "path": "memory/PROJECT_MEMORY.md",
+      "sha256": "5bdebac698643ae895a4021bf11ead3ba02b136738d5a7adad29a2f15ea7257b"
+    },
+    {
+      "owner": "memory",
+      "path": "memory/SESSION_HANDOFF.md",
+      "sha256": "fe0289cbb7e34efe34f6b5aa71904fc7976bcb2c3c54313fd5607b5bb1cf2550"
+    },
+    {
+      "owner": "memory",
+      "path": "memory/state.json",
+      "sha256": "9e31fe691ce85cb6c4c04fbc9c0b04c3784a3f6e63b8907529fdaadd44353462"
+    },
+    {
+      "owner": "planning",
+      "path": "planning/acceptance-criteria.md",
+      "sha256": "60dbcdbaa9281e142e175be7ebe3ddac1220df2816cd8ec302d1b945ff883f21"
+    },
+    {
+      "owner": "planning",
+      "path": "planning/product-vision.md",
+      "sha256": "b436aef91ddba4f9c37fccd093428fab97a87bd337c0d449534642a97f1aca44"
+    },
+    {
+      "owner": "planning",
+      "path": "planning/requirements.md",
+      "sha256": "f538b5f4bdcfdae75092ecbbd9f80c69bd17b878a99ce008bf7c4d31d7dd1471"
+    },
+    {
+      "owner": "planning",
+      "path": "planning/roadmap.md",
+      "sha256": "930d7ab7d7f23bd262faeba7b0415c66b33f95f3bead57f47a0fa803c27ab6bd"
+    },
+    {
+      "owner": "planning",
+      "path": "planning/status.md",
+      "sha256": "85c4913fd0095c3ae8672d2d36102794be69c8ba0c3e937ada3fc9f7d5d6c625"
+    },
+    {
+      "owner": "prompt",
+      "path": "prompts/project-bootstrap.md",
+      "sha256": "12d26748629b86aba636d79589527cb90ed169ca10c1ed64ccf0c250de54a5ce"
+    },
+    {
+      "owner": "quality",
+      "path": "quality/completion-evidence.md",
+      "sha256": "d772568f682b17073c9d04e63d0782e465df4aef108ffcdd79fe8632ff2c926e"
+    },
+    {
+      "owner": "quality",
+      "path": "quality/quality-gates.md",
+      "sha256": "6ac379d2e779e80b3b1bb24f3c6e3e651602b8d687507c0762ed575c9e34314b"
+    },
+    {
+      "owner": "testing",
+      "path": "quality/testing.md",
+      "sha256": "704a1306cea5b04894e064646bd1902135c372e09d06c0d81b70ac00e8507423"
+    },
+    {
+      "owner": "validation",
+      "path": "quality/validation-plan.md",
+      "sha256": "2c6c4c8f65fb8be4526d54fcba3dfef6d945f8c4cd0cd32e64472cf3970f93a1"
+    },
+    {
+      "owner": "research",
+      "path": "research/research.md",
+      "sha256": "7d86e2cb1d6f51a3a10cd667d5614a0a3e2f54955f9df47c87d163366a139b9b"
+    },
+    {
+      "owner": "security",
+      "path": "risks/risk-register.md",
+      "sha256": "56d6affab42a3203a3adc7a04f81a0d6920d00c1a40f4efe5e406eb83311f43c"
+    },
+    {
+      "owner": "security",
+      "path": "security/security.md",
+      "sha256": "5e5cd2a8d5d97c980b74e012574b1775e24cf8a5e51eacef0c20e9d664bd7a22"
+    },
+    {
+      "owner": "skills",
+      "path": "skills/project-skills.md",
+      "sha256": "07a38af04fd4515d976c5e0f6604f633a8fc76e291e69c5cac71c23b65f6aff6"
+    }
+  ],
+  "engine_order": [
+    "doctrine",
+    "planning",
+    "architecture",
+    "domain",
+    "prompt",
+    "research",
+    "diagram",
+    "documentation",
+    "security",
+    "skills",
+    "validation",
+    "chunk",
+    "quality",
+    "testing",
+    "delivery",
+    "memory"
+  ],
+  "framework": {
+    "name": "Project Genesis Framework",
+    "version": "1.0.0"
+  },
+  "generation": {
+    "deterministic": true,
+    "generated_at": "1970-01-01T00:00:00Z"
+  },
+  "project": {
+    "constraints": [
+      "WCAG 2.2 AA and strong Core Web Vitals",
+      "Australian English, AUD pricing plus GST, and ethical review practices",
+      "Central configuration must support a future rebrand",
+      "Forms must be honest, privacy-preserving, validated, and adapter-based"
+    ],
+    "description": "A production-quality Australian local-business growth system marketing and sales website covering services, pricing, industry pages, an interactive AI receptionist demonstration, and validated lead-capture flows.",
+    "id": "b2e195c00813e779",
+    "name": "AI-Magnet",
+    "slug": "ai-magnet"
+  },
+  "schema_version": "1"
+}

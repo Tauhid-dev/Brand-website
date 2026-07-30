@@ -1,0 +1,14 @@
+---
+title: "Dependency Rules — AI-Magnet"
+---
+flowchart TD
+    outer["Delivery and infrastructure"]
+    application["Use cases"]
+    domain["Domain model"]
+    contracts["Stable contracts"]
+    outer -->|"depends inward"| application
+    application -->|"depends inward"| domain
+    outer -->|"implements"| contracts
+    application -->|"owns"| contracts
+    classDef genesis fill:#eef4ff,stroke:#2457a6,color:#10233f
+    class outer,application,domain,contracts genesis
