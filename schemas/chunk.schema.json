@@ -1,0 +1,25 @@
+{
+  "$id": "https://project-genesis.dev/schemas/v1/chunk.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "chunk": {
+      "additionalProperties": false,
+      "properties": {
+        "dependencies": {"items": {"pattern": "^C[0-9]{3}$", "type": "string"}, "type": "array", "uniqueItems": true},
+        "id": {"pattern": "^C[0-9]{3}$", "type": "string"},
+        "outputs": {"items": {"type": "string"}, "minItems": 1, "type": "array"},
+        "purpose": {"minLength": 10, "type": "string"},
+        "title": {"minLength": 3, "type": "string"}
+      },
+      "required": ["id", "title", "dependencies", "purpose", "outputs"],
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "chunks": {"items": {"$ref": "#/$defs/chunk"}, "minItems": 1, "type": "array"},
+    "schema_version": {"const": "1"}
+  },
+  "required": ["schema_version", "chunks"],
+  "type": "object"
+}

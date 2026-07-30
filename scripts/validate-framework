@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+set -eu
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+FRAMEWORK_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+cd "$FRAMEWORK_DIR"
+PYTHONPATH="$FRAMEWORK_DIR${PYTHONPATH:+:$PYTHONPATH}" python3 -m unittest discover -s tests -v
+PYTHONPATH="$FRAMEWORK_DIR${PYTHONPATH:+:$PYTHONPATH}" python3 scripts/framework_check.py

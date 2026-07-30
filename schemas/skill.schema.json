@@ -1,0 +1,17 @@
+{
+  "$id": "https://project-genesis.dev/schemas/v1/skill.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "dependencies": {"items": {"type": "string"}, "type": "array"},
+    "examples": {"items": {"type": "string"}, "minItems": 1, "type": "array"},
+    "id": {"pattern": "^[a-z][a-z0-9-]*$", "type": "string"},
+    "inputs": {"items": {"type": "string"}, "minItems": 1, "type": "array"},
+    "outputs": {"items": {"type": "string"}, "minItems": 1, "type": "array"},
+    "purpose": {"minLength": 10, "type": "string"},
+    "when_not_to_use": {"minLength": 5, "type": "string"},
+    "when_to_use": {"minLength": 5, "type": "string"}
+  },
+  "required": ["id", "purpose", "when_to_use", "when_not_to_use", "inputs", "outputs", "dependencies", "examples"],
+  "type": "object"
+}

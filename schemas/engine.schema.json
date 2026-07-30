@@ -1,0 +1,28 @@
+{
+  "$id": "https://project-genesis.dev/schemas/v1/engine.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "engine": {
+      "additionalProperties": false,
+      "properties": {
+        "dependencies": {"items": {"type": "string"}, "type": "array", "uniqueItems": true},
+        "engine_id": {"pattern": "^[a-z][a-z0-9-]*$", "type": "string"},
+        "extension_points": {"items": {"type": "string"}, "minItems": 1, "type": "array"},
+        "inputs": {"items": {"type": "string"}, "minItems": 1, "type": "array"},
+        "outputs": {"items": {"type": "string"}, "minItems": 1, "type": "array"},
+        "responsibilities": {"items": {"type": "string"}, "minItems": 1, "type": "array"},
+        "title": {"minLength": 1, "type": "string"},
+        "validation": {"items": {"type": "string"}, "minItems": 1, "type": "array"}
+      },
+      "required": ["engine_id", "title", "responsibilities", "inputs", "outputs", "dependencies", "extension_points", "validation"],
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "engines": {"items": {"$ref": "#/$defs/engine"}, "minItems": 16, "type": "array"},
+    "schema_version": {"const": "1"}
+  },
+  "required": ["schema_version", "engines"],
+  "type": "object"
+}

@@ -1,0 +1,16 @@
+{
+  "$id": "https://project-genesis.dev/schemas/v1/memory.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "chunks": {"additionalProperties": {"enum": ["planned", "ready", "in_progress", "blocked", "verified", "complete"]}, "type": "object"},
+    "current_chunk": {"pattern": "^C[0-9]{3}$", "type": "string"},
+    "last_updated": {"type": "string"},
+    "next_action": {"minLength": 20, "type": "string"},
+    "project_id": {"pattern": "^[a-f0-9]{16}$", "type": "string"},
+    "schema_version": {"const": "1"},
+    "status": {"enum": ["planned", "ready", "in_progress", "blocked", "verified", "complete"]}
+  },
+  "required": ["schema_version", "project_id", "current_chunk", "next_action", "status", "chunks", "last_updated"],
+  "type": "object"
+}

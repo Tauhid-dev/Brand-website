@@ -1,0 +1,39 @@
+# Acceptance Criteria — {{PROJECT_NAME}}
+
+## Scenarios
+
+### AC-001 — Primary outcome (REQ-001)
+
+- Given an authorised actor with valid input
+- When the documented primary workflow is completed
+- Then the intended outcome is produced atomically and is observable
+- And failure does not leave contradictory state
+
+### AC-002 — Boundary enforcement (REQ-002, REQ-006)
+
+- Given unauthorised, malformed, replayed, or excessive input
+- When it crosses a trust boundary
+- Then it is rejected safely, recorded without secrets, and does not alter protected state
+
+### AC-003 — Operability (REQ-003, REQ-004)
+
+- Given a supported failure mode
+- When operators follow the documented recovery action
+- Then service is restored within the agreed objective and evidence is retained
+
+### AC-004 — Architecture fitness (REQ-005)
+
+- Given the dependency model
+- When architecture validation runs
+- Then domain policy has no dependency on delivery or infrastructure implementations
+
+### AC-005 — Inclusive and performant delivery (REQ-007, REQ-008)
+
+- Given a supported user channel and representative workload
+- When accessibility and performance checks execute
+- Then agreed targets pass with retained evidence
+
+## Definition of accepted
+
+Acceptance requires objective evidence, reviewer identity, execution context, and
+date. A promise, screenshot without provenance, or unchecked box is not evidence.

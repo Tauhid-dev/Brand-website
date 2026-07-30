@@ -1,0 +1,19 @@
+{
+  "$id": "https://project-genesis.dev/schemas/v1/project-input.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {"type": "string"},
+    "constraints": {
+      "default": [],
+      "items": {"maxLength": 500, "minLength": 1, "type": "string"},
+      "type": "array",
+      "uniqueItems": true
+    },
+    "description": {"maxLength": 5000, "minLength": 10, "type": "string"},
+    "name": {"maxLength": 120, "minLength": 1, "type": "string"}
+  },
+  "required": ["name", "description"],
+  "title": "Project Genesis Input",
+  "type": "object"
+}

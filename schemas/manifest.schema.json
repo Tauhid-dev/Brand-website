@@ -1,0 +1,27 @@
+{
+  "$id": "https://project-genesis.dev/schemas/v1/manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifacts": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "owner": {"minLength": 1, "type": "string"},
+          "path": {"minLength": 1, "type": "string"},
+          "sha256": {"pattern": "^[a-f0-9]{64}$", "type": "string"}
+        },
+        "required": ["path", "owner", "sha256"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "engine_order": {"items": {"type": "string"}, "minItems": 16, "type": "array"},
+    "framework": {"type": "object"},
+    "generation": {"type": "object"},
+    "project": {"type": "object"},
+    "schema_version": {"const": "1"}
+  },
+  "required": ["schema_version", "framework", "project", "generation", "engine_order", "artifacts"],
+  "type": "object"
+}
