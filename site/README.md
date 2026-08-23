@@ -96,11 +96,12 @@ actions tied to the current ChatGPT user. Leave public content anonymous.
 
 ## Database workflow
 
-Migrations `drizzle/0000_uneven_violations.sql` and
-`drizzle/0001_last_rafael_vega.sql` establish customer/catalogue and then
-versioned pricing/quote persistence. Apply them in order through the
-Sites/Cloudflare environment for the target stage. Do not edit an applied
-migration; change `db/schema.ts` and generate the next forward-only migration.
+Migrations `drizzle/0000_uneven_violations.sql`,
+`drizzle/0001_last_rafael_vega.sql` and `drizzle/0002_windy_sprite.sql`
+establish customer/catalogue, versioned pricing/quotes and then discounts/
+promotions. Apply them in order through the Sites/Cloudflare environment for the
+target stage. Do not edit an applied migration; change `db/schema.ts` and
+generate the next forward-only migration.
 
 Development fixtures include clearly fictional catalogue/customer examples and
 the four initial AUD price sets. They are exported separately from production

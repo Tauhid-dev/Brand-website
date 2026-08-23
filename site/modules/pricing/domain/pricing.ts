@@ -87,7 +87,8 @@ export type PricingBreakdown = {
   overridePriceMinor: number | null;
   overrideSetupFeeMinor: number | null;
   includesSetupFee: boolean;
-  discountTotalMinor: 0;
+  discounts: ReadonlyArray<{ customerDiscountId: string; discountCode: string; amountMinor: number }>;
+  discountTotalMinor: number;
   subtotalMinor: number;
   taxMinor: number;
   totalMinor: number;
@@ -148,6 +149,7 @@ function validatePricingBreakdown(
     breakdown.totalMinor,
     breakdown.overridePriceMinor ?? 0,
     breakdown.overrideSetupFeeMinor ?? 0,
+    ...breakdown.discounts.map((discount) => discount.amountMinor),
   ];
   if (amounts.some((value) => !Number.isSafeInteger(value) || value < 0)) {
     throw new DomainValidationError("INVALID_QUOTE_AMOUNT", "Quote amounts must be safe minor units.");

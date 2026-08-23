@@ -59,6 +59,7 @@ test("quote domain rejects a snapshot whose arithmetic was altered", () => {
       overridePriceMinor: null,
       overrideSetupFeeMinor: null,
       includesSetupFee: false,
+      discounts: [],
       discountTotalMinor: 0,
       subtotalMinor: 100,
       taxMinor: 10,
