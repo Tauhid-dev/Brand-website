@@ -1,3 +1,5 @@
+import { PUBLIC_PRICE_TAX_DISCLOSURE } from "../modules/pricing/domain/tax-policy.ts";
+
 export type NavItem = { label: string; href: string };
 export type Service = NavItem & {
   eyebrow: string;
@@ -64,7 +66,7 @@ export const brand = {
   phone: "1300 000 000",
   currency: "AUD",
   gstEnabled: true,
-  gst: "All prices are in Australian dollars and exclude GST.",
+  gst: PUBLIC_PRICE_TAX_DISCLOSURE,
   logo: { mark: "/favicon.svg", wordmark: "/favicon.svg" },
   socialLinks: [
     { platform: "linkedin", url: "" },
