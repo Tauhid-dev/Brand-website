@@ -6,6 +6,8 @@ commit are complete.
 
 ## Phase 1 — Audit, target model and rebrand
 
+Status: complete (23 August 2026).
+
 Acceptance criteria: repository audit and baseline evidence recorded; expanded
 domain/database target documented; central typed Zuno Pixel configuration;
 public content, metadata, structured data, package labels, analytics namespace,
@@ -14,11 +16,13 @@ commercial schema; all baseline gates pass.
 
 ## Phase 2 — Customer and catalogue foundation
 
+Status: complete (23 August 2026).
+
 Customer self-registration/admin creation/invitation ports, customer and
 business profile aggregates, internal notes, offerings, plans, features,
-repository interfaces, D1 migrations and development-only seed data. This
-phase also establishes API error/request context primitives but exposes only
-the endpoints required by its acceptance tests.
+repository interfaces, D1 migrations and development-only seed data. Shared API
+error/request context primitives are established, but no HTTP endpoint was
+required to prove this foundation.
 
 ## Phase 3 — Pricing and commercial quotes
 
