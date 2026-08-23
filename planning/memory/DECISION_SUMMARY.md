@@ -1,4 +1,4 @@
-# Decision Summary — AI-Magnet
+# Decision Summary — Zuno Pixel
 
 | Decision | Status | Rationale | Authority |
 | --- | --- | --- | --- |

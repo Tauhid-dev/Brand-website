@@ -20,7 +20,7 @@ export function organisationSchema() {
     description: brand.description,
     areaServed: brand.region,
     url: brand.domain,
-    email: brand.email,
+    email: brand.salesEmail,
     telephone: brand.phone,
   };
 }

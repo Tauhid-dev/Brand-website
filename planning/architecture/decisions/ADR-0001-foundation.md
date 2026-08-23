@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 1970-01-01T00:00:00Z
-- Project: AI-Magnet
+- Project: Zuno Pixel
 
 ## Context
 

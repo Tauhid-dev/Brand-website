@@ -1,4 +1,4 @@
-# Status — AI-Magnet
+# Status — Zuno Pixel
 
 Overall: **Ready for C001**
 

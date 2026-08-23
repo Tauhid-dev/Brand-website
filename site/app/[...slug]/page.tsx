@@ -39,7 +39,7 @@ const legalContent: Record<string, { title: string; updated: string; sections: [
       ["How information is used", "Information may be used to respond, qualify a request, arrange a consultation, provide services, protect the website and meet legal obligations."],
       ["Service providers and storage", "Approved hosting, communications, analytics, calendar and CRM providers may process limited information under configured agreements. Final providers and retention periods must be confirmed before launch."],
       ["Your choices", "You may ask about access, correction or deletion where applicable, or withdraw optional marketing consent."],
-      ["Contact", `Privacy enquiries can be directed to ${brand.email}.`],
+      ["Contact", `Privacy enquiries can be directed to ${brand.supportEmail}.`],
     ],
   },
   terms: {
@@ -51,7 +51,7 @@ const legalContent: Record<string, { title: string; updated: string; sections: [
       ["No ranking guarantee", "Search visibility depends on many factors outside our control. We do not guarantee a particular Google or search ranking."],
       ["AI limitations", "Automated assistants can misunderstand information. They require approved knowledge, testing, escalation rules and appropriate human oversight."],
       ["Intellectual property", "Ownership and licensing of customer content, deliverables, software and third-party materials are set out in the applicable agreement."],
-      ["Contact", `Questions about these terms can be directed to ${brand.email}.`],
+      ["Contact", `Questions about these terms can be directed to ${brand.supportEmail}.`],
     ],
   },
   "ai-data-policy": {
@@ -64,7 +64,7 @@ const legalContent: Record<string, { title: string; updated: string; sections: [
       ["Human handover", "Customers define handover rules. Visitors should be offered a clear path to a person when judgement, complaints, sensitive matters or exceptions arise."],
       ["Integrations and retention", "Calendar, messaging, CRM and analytics providers may process limited data. Retention settings and account ownership are configured with each customer."],
       ["Limitations and safety", "The assistant is not an emergency service and should not provide medical, legal, financial or other high-risk professional advice. Emergency prompts should direct visitors to appropriate services."],
-      ["Control and contact", `Customers retain control of approved knowledge and connected accounts under their agreement. Privacy enquiries can be sent to ${brand.email}.`],
+      ["Control and contact", `Customers retain control of approved knowledge and connected accounts under their agreement. Privacy enquiries can be sent to ${brand.supportEmail}.`],
     ],
   },
 };
@@ -115,7 +115,7 @@ function AuditPage() {
 }
 
 function ContactPage() {
-  return <><PageHero eyebrow="Start a useful conversation" title="Tell us what growth looks like for your business." copy="Ask a question, request a consultation or start with the free growth audit." /><section className="section"><div className="container contact-grid"><div><SectionHeading eyebrow="Contact" title="A clear path to the right next step." /><div className="contact-method"><span>Email</span><a href={`mailto:${brand.email}`}>{brand.email}</a></div><div className="contact-method"><span>Phone</span><a href={`tel:${brand.phone.replace(/\s/g, "")}`}>{brand.phone}</a></div><p className="placeholder-note">Contact details are launch placeholders and must be configured before publication.</p></div><div className="form-shell compact-form"><AuditForm compact /></div></div></section></>;
+  return <><PageHero eyebrow="Start a useful conversation" title="Tell us what growth looks like for your business." copy="Ask a question, request a consultation or start with the free growth audit." /><section className="section"><div className="container contact-grid"><div><SectionHeading eyebrow="Contact" title="A clear path to the right next step." /><div className="contact-method"><span>Email</span><a href={`mailto:${brand.salesEmail}`}>{brand.salesEmail}</a></div><div className="contact-method"><span>Phone</span><a href={`tel:${brand.phone.replace(/\s/g, "")}`}>{brand.phone}</a></div><p className="placeholder-note">Contact details are launch placeholders and must be configured before publication.</p></div><div className="form-shell compact-form"><AuditForm compact /></div></div></section></>;
 }
 
 function LegalPage({ data }: { data: (typeof legalContent)[string] }) {

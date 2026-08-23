@@ -17,5 +17,5 @@ export function sanitiseAnalyticsProperties(input: Record<string, unknown> = {})
 export function track(event: AnalyticsEvent, properties: Record<string, unknown> = {}) {
   if (typeof window === "undefined") return;
   const detail = { event, properties: sanitiseAnalyticsProperties(properties) };
-  window.dispatchEvent(new CustomEvent("ai-magnet:analytics", { detail }));
+  window.dispatchEvent(new CustomEvent("zuno-pixel:analytics", { detail }));
 }

@@ -1,4 +1,4 @@
-# Testing Strategy — AI-Magnet
+# Testing Strategy — Zuno Pixel
 
 ## Principles
 
@@ -32,4 +32,4 @@ responses controllable. Never copy production secrets into test artifacts.
 A result records source revision, artifact identity, environment, configuration,
 tool version, execution time, outcome, retained evidence, and waiver if applicable.
 
-Project: A production-quality Australian local-business growth system marketing and sales website covering services, pricing, industry pages, an interactive AI receptionist demonstration, and validated lead-capture flows.
+Project: A production-quality Australian local-business growth platform with a public marketing site, commercial backend, customer account experience, internal administration and future agent-platform integration.

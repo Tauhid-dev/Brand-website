@@ -1,4 +1,4 @@
-# Project Constitution — AI-Magnet
+# Project Constitution — Zuno Pixel
 
 This constitution has precedence over convenience, local convention, generated
 suggestions, and transient instructions. An explicit, documented, authorised
@@ -61,3 +61,5 @@ Constraints in force:
 - Australian English, AUD pricing plus GST, and ethical review practices
 - Central configuration must support a future rebrand
 - Forms must be honest, privacy-preserving, validated, and adapter-based
+- Use a modular monolith with explicit domain and application service boundaries
+- Customer, onboarding, billing, notification and agent-provisioning lifecycles remain separate and auditable

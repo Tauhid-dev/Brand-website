@@ -1,4 +1,4 @@
-# Research Register — AI-Magnet
+# Research Register — Zuno Pixel
 
 ## Protocol
 
@@ -15,7 +15,7 @@ affected decisions. Label inferences and never turn an assumption into a fact.
 
 ## Project brief
 
-A production-quality Australian local-business growth system marketing and sales website covering services, pricing, industry pages, an interactive AI receptionist demonstration, and validated lead-capture flows.
+A production-quality Australian local-business growth platform with a public marketing site, commercial backend, customer account experience, internal administration and future agent-platform integration.
 
 ## Constraints to verify
 
@@ -23,3 +23,5 @@ A production-quality Australian local-business growth system marketing and sales
 - Australian English, AUD pricing plus GST, and ethical review practices
 - Central configuration must support a future rebrand
 - Forms must be honest, privacy-preserving, validated, and adapter-based
+- Use a modular monolith with explicit domain and application service boundaries
+- Customer, onboarding, billing, notification and agent-provisioning lifecycles remain separate and auditable

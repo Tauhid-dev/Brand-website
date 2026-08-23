@@ -17,27 +17,60 @@ export type Package = {
   exclusions?: string[];
 };
 
+export type CurrencyCode = "AUD";
+export type CountryCode = "AU";
+export type SocialLink = {
+  platform: "linkedin" | "instagram" | "facebook";
+  url: string;
+};
+export interface BrandConfiguration {
+  name: string;
+  shortName: string;
+  legalName: string;
+  abn: string;
+  tagline: string;
+  description: string;
+  domain: string;
+  country: CountryCode;
+  region: string;
+  serviceRegion: string;
+  supportEmail: string;
+  salesEmail: string;
+  phone: string;
+  currency: CurrencyCode;
+  gstEnabled: boolean;
+  gst: string;
+  logo: { mark: string; wordmark: string };
+  socialLinks: readonly SocialLink[];
+  analytics: { ga4MeasurementId: string };
+  cta: { primary: NavItem; secondary: NavItem };
+  seo: { title: string; description: string };
+}
+
 export const brand = {
-  name: "AI-Magnet",
-  shortName: "AI-Magnet",
+  name: "Zuno Pixel",
+  shortName: "Zuno Pixel",
   legalName: "Legal entity to be configured",
   abn: "ABN to be configured",
   tagline: "Get found. Build trust. Book more work.",
   description:
     "The complete local-business growth system that turns searches and enquiries into booked customers.",
   domain: "https://www.example.com",
+  country: "AU",
   region: "Australia",
   serviceRegion: "Australian local businesses",
-  email: "hello@example.com",
+  supportEmail: "support@example.com",
+  salesEmail: "hello@example.com",
   phone: "1300 000 000",
   currency: "AUD",
+  gstEnabled: true,
   gst: "All prices are in Australian dollars and exclude GST.",
   logo: { mark: "/favicon.svg", wordmark: "/favicon.svg" },
-  social: {
-    linkedin: "",
-    instagram: "",
-    facebook: "",
-  },
+  socialLinks: [
+    { platform: "linkedin", url: "" },
+    { platform: "instagram", url: "" },
+    { platform: "facebook", url: "" },
+  ],
   analytics: {
     ga4MeasurementId: process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID ?? "",
   },
@@ -49,11 +82,11 @@ export const brand = {
     },
   },
   seo: {
-    title: "AI-Magnet | Local Business Growth System Australia",
+    title: "Zuno Pixel | Local Business Growth System Australia",
     description:
       "Websites, local SEO, reputation, social presence and a 24/7 AI receptionist—managed as one growth system for Australian local businesses.",
   },
-} as const;
+} as const satisfies BrandConfiguration;
 
 export const services: Service[] = [
   {

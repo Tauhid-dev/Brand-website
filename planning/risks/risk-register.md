@@ -1,4 +1,4 @@
-# Risk Register — AI-Magnet
+# Risk Register — Zuno Pixel
 
 Scoring: likelihood (1–5) × impact (1–5). Owners accept, mitigate, transfer, or
 avoid risk; overdue treatment is a quality-gate failure.
@@ -21,3 +21,5 @@ and consequences. Undocumented debt is a defect.
 - Australian English, AUD pricing plus GST, and ethical review practices
 - Central configuration must support a future rebrand
 - Forms must be honest, privacy-preserving, validated, and adapter-based
+- Use a modular monolith with explicit domain and application service boundaries
+- Customer, onboarding, billing, notification and agent-provisioning lifecycles remain separate and auditable

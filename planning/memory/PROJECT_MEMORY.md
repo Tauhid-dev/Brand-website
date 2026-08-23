@@ -1,9 +1,9 @@
-# Project Memory — AI-Magnet
+# Project Memory — Zuno Pixel
 
 ## Durable identity
 
-- Project ID: `b2e195c00813e779`
-- Intent: A production-quality Australian local-business growth system marketing and sales website covering services, pricing, industry pages, an interactive AI receptionist demonstration, and validated lead-capture flows.
+- Project ID: `1924e2efcf152558`
+- Intent: A production-quality Australian local-business growth platform with a public marketing site, commercial backend, customer account experience, internal administration and future agent-platform integration.
 - Framework: Project Genesis 1.0.0
 
 ## Memory protocol

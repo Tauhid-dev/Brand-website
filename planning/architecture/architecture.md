@@ -1,8 +1,8 @@
-# Architecture — AI-Magnet
+# Architecture — Zuno Pixel
 
 ## Purpose
 
-Provide a technology-neutral architecture baseline for: A production-quality Australian local-business growth system marketing and sales website covering services, pricing, industry pages, an interactive AI receptionist demonstration, and validated lead-capture flows.
+Provide a technology-neutral architecture baseline for: A production-quality Australian local-business growth platform with a public marketing site, commercial backend, customer account experience, internal administration and future agent-platform integration.
 
 ## Quality Attributes
 

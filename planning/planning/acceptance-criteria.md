@@ -1,4 +1,4 @@
-# Acceptance Criteria — AI-Magnet
+# Acceptance Criteria — Zuno Pixel
 
 ## Scenarios
 
