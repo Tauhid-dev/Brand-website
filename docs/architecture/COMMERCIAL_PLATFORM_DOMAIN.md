@@ -1,7 +1,7 @@
 # Zuno Pixel commercial platform domain and database design
 
-Status: target design approved for phased implementation. No commercial tables
-are created in Phase 1.
+Status: target design approved for phased implementation. Phase 2 now implements
+the customer and catalogue foundation; later table groups remain target design.
 
 ## Architecture decision
 
@@ -85,9 +85,18 @@ Planned services include `RegisterCustomer`, `InviteCustomer`, `CreateCustomer`,
 `RevokeEntitlements`, `IssuePaymentReminder`, `BuildAgentBootstrapProfile`,
 `QueueAgentProvisioning`, and `RecordAuditEvent`.
 
+Phase 2 implements `CreateCustomerService`, `RegisterCustomerService` and
+`InviteCustomerService` behind repository, identity, token and delivery ports.
+Token issuance/delivery implementations and authentication/session policy stay
+in Phase 6; the application layer stores only invitation hashes.
+
 ## Target table groups
 
 ### Identity and customers
+
+Phase 2 implements all five tables in this group. Identity rows and invitation
+records establish persistence boundaries only; they do not constitute an
+authentication/session implementation.
 
 | Table | Purpose and important constraints/indexes |
 | --- | --- |
@@ -106,6 +115,9 @@ Planned services include `RegisterCustomer`, `InviteCustomer`, `CreateCustomer`,
 | `customer_integrations` | Provider/category/status/last check; unique active `(customer_id, integration_code)` |
 
 ### Catalogue and pricing
+
+Phase 2 implements `offerings`, `plans` and `plan_features`. Pricing and
+promotion tables remain deferred to Phases 3 and 4.
 
 `offerings`, `plans`, `plan_features`, `plan_prices`,
 `customer_price_overrides`, `discounts`, `promotion_codes`,

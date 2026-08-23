@@ -1,8 +1,7 @@
 # Zuno Pixel platform
 
 The public Zuno Pixel site and phased commercial-platform application, running
-on [Vinext](https://github.com/cloudflare/vinext) with optional Cloudflare D1
-and Drizzle support.
+on [Vinext](https://github.com/cloudflare/vinext) with Cloudflare D1 and Drizzle.
 
 ## Prerequisites
 
@@ -21,11 +20,13 @@ This starter does not use `wrangler.jsonc`.
 ## Included Shape
 
 - edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
+- `.openai/hosting.json` declares the `DB` D1 binding (R2 remains disabled)
 - `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
+- `db/schema.ts` owns the customer and catalogue foundation
+- `modules/` keeps domain/application policy independent of HTTP and Drizzle
 - `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
+- `drizzle/` contains forward-only generated migrations
+- `db/seeds/development.ts` exports opt-in demo fixtures and never auto-runs
 
 ## Workspace Auth Headers
 
@@ -89,8 +90,20 @@ actions tied to the current ChatGPT user. Leave public content anonymous.
 
 - `npm run dev`: start local development
 - `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
+- `npm test`: production build plus domain, application, migration, repository
+  and rendered-page tests
 - `npm run db:generate`: generate Drizzle migrations after schema changes
+
+## Database workflow
+
+The first migration is `drizzle/0000_uneven_violations.sql`. Apply generated
+migrations through the Sites/Cloudflare environment for the target stage. Do
+not edit an applied migration; change `db/schema.ts` and generate the next
+forward-only migration.
+
+Development fixtures include clearly fictional catalogue and customer examples.
+They are exported separately from production paths and require an explicit
+caller, preventing accidental production seeding.
 
 ## Learn More
 
