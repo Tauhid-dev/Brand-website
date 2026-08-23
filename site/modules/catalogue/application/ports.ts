@@ -7,3 +7,12 @@ export interface CatalogueRepository {
   savePlan(plan: Plan): Promise<void>;
   savePlanFeature(feature: PlanFeature): Promise<void>;
 }
+
+export interface PlanEntitlementSource {
+  findPlanEntitlementDefinitions(planId: string): Promise<Array<{
+    offeringCode: string;
+    enabled: boolean;
+    limitValue: number | null;
+    limitUnit: string | null;
+  }>>;
+}

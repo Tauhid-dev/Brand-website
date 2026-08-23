@@ -22,7 +22,7 @@ function discount(input: Partial<Omit<DiscountProps, "code">> & { code: string }
 
 function assignment(value: Discount): CustomerDiscount {
   return new CustomerDiscount({
-    id: id(), customerId: id(), discountId: value.props.id, promotionCodeId: null, source: "ADMIN",
+    id: id(), customerId: id(), discountId: value.props.id, subscriptionId: null, promotionCodeId: null, source: "ADMIN",
     effectiveRange: new EffectiveRange(NOW, null), status: "ACTIVE", appliedBy: "admin-1",
     reason: "Approved offer", createdAt: NOW, updatedAt: NOW,
   });

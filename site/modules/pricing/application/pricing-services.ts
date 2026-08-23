@@ -170,6 +170,7 @@ export class PricingService {
   async resolvePrice(input: {
     customerId?: string | null;
     planId: string;
+    subscriptionId?: string | null;
     billingInterval: BillingInterval;
     effectiveAt: Date;
     includeSetupFee?: boolean;
@@ -211,6 +212,7 @@ export class PricingService {
       ? await this.discounts.resolve({
           customerId: customerId.value,
           planId: planId.value,
+          subscriptionId: input.subscriptionId,
           effectiveAt: input.effectiveAt,
           charge,
         })

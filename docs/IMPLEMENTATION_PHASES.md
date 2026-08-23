@@ -41,6 +41,8 @@ transaction-safe redemption and stacking/currency/duration policies.
 
 ## Phase 5 — Subscriptions, entitlements and billing records
 
+Status: complete (24 August 2026).
+
 Subscription state machine, contracted price versions, entitlement generation
 and revocation, billing accounts, invoice history, payment reminders and the
 provider-neutral billing port. Suspend/resume/cancel preserve customer data.

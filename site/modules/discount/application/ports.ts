@@ -14,7 +14,7 @@ export interface DiscountRepository {
   findPromotionByCode(code: string): Promise<{ promotion: PromotionCode; discount: Discount } | null>;
   savePromotionCode(promotion: PromotionCode): Promise<void>;
   saveCustomerDiscount(customerDiscount: CustomerDiscount): Promise<void>;
-  findEligibleCustomerDiscounts(customerId: string, planId: string, at: Date): Promise<EligibleDiscount[]>;
+  findEligibleCustomerDiscounts(customerId: string, planId: string, at: Date, subscriptionId?: string | null): Promise<EligibleDiscount[]>;
   claimPromotionCode(customerDiscount: CustomerDiscount, redemption: DiscountRedemption): Promise<void>;
   saveChargeRedemption(redemption: DiscountRedemption): Promise<void>;
 }
