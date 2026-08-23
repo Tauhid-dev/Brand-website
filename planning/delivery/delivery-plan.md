@@ -1,4 +1,4 @@
-# Delivery Plan — AI-Magnet
+# Delivery Plan — Zuno Pixel
 
 ## Artifact lifecycle
 
@@ -47,3 +47,5 @@ Constraints:
 - Australian English, AUD pricing plus GST, and ethical review practices
 - Central configuration must support a future rebrand
 - Forms must be honest, privacy-preserving, validated, and adapter-based
+- Use a modular monolith with explicit domain and application service boundaries
+- Customer, onboarding, billing, notification and agent-provisioning lifecycles remain separate and auditable

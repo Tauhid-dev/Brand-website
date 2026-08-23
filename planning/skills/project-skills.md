@@ -1,4 +1,4 @@
-# Project Skill Plan — AI-Magnet
+# Project Skill Plan — Zuno Pixel
 
 Use the framework packs under `skills/` through the following contract: purpose,
 when to use, when not to use, inputs, outputs, dependencies, and examples.
@@ -16,4 +16,4 @@ when to use, when not to use, inputs, outputs, dependencies, and examples.
 Select only skills whose use conditions apply. A skill guides work but does not replace
 project authority, source verification, or quality gates.
 
-Project intent: A production-quality Australian local-business growth system marketing and sales website covering services, pricing, industry pages, an interactive AI receptionist demonstration, and validated lead-capture flows.
+Project intent: A production-quality Australian local-business growth platform with a public marketing site, commercial backend, customer account experience, internal administration and future agent-platform integration.

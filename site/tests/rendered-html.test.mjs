@@ -19,6 +19,8 @@ test("server-renders the branded homepage", async () => {
   assert.match(html, /Book more work\./);
   assert.match(html, /Free Growth Audit/);
   assert.match(html, /AI receptionist/i);
+  assert.match(html, /Zuno Pixel/);
+  assert.doesNotMatch(html, /AI-Magnet|AI Magnet|ai-magnet/i);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
 
@@ -38,7 +40,8 @@ test("keeps brand, pricing and analytics policy centralised", async () => {
     readFile(new URL("../lib/config.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/analytics.ts", import.meta.url), "utf8"),
   ]);
-  assert.match(config, /name: "AI-Magnet"/);
+  assert.match(config, /name: "Zuno Pixel"/);
+  assert.match(config, /satisfies BrandConfiguration/);
   assert.match(config, /setup: 2990/);
   assert.match(config, /monthly: 649/);
   assert.match(config, /Most Popular|popular: true/);

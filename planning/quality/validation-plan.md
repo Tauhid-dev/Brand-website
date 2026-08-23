@@ -1,4 +1,4 @@
-# Validation Plan — AI-Magnet
+# Validation Plan — Zuno Pixel
 
 ## Validators
 
@@ -24,4 +24,4 @@ revision and tool version.
 Report stable codes, severity, artifact, and actionable message. Do not mutate the
 target during validation. Never suppress an error without an expiring waiver.
 
-Project ID: `b2e195c00813e779`.
+Project ID: `1924e2efcf152558`.

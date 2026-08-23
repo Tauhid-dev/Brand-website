@@ -1,4 +1,4 @@
-# Roadmap — AI-Magnet
+# Roadmap — Zuno Pixel
 
 ## Sequencing principles
 
@@ -18,4 +18,4 @@ capacity, dependencies, and confidence are explicit.
 Capabilities not required for the next validated outcome remain hypotheses. They
 must not create speculative abstractions or dependencies.
 
-Generated for AI-Magnet at 1970-01-01T00:00:00Z.
+Generated for Zuno Pixel at 1970-01-01T00:00:00Z.

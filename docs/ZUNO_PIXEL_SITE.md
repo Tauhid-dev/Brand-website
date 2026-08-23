@@ -1,8 +1,8 @@
-# AI-Magnet website guide
+# Zuno Pixel website guide
 
 ## Purpose and architecture
 
-The public site presents AI-Magnet as one connected local-business growth
+The public site presents Zuno Pixel as one connected local-business growth
 system, not an isolated web-design or chatbot service. The production surface
 lives in `site/` and uses Next-compatible App Router conventions through
 Vinext, React 19, TypeScript, Tailwind's existing CSS pipeline, Cloudflare
@@ -41,14 +41,25 @@ ABN, tagline, domain, region, contact details, social links, currency, GST
 message, logo paths, analytics identifier and calls to action. Replace
 `site/public/favicon.svg` and `site/public/og.png` with approved assets.
 
-Search the repository for the old name after a rebrand:
+Search the repository for the current name after a rebrand, then separately
+scan for the retired name documented in the rebrand history:
 
 ```bash
-rg "AI-Magnet|ai-magnet" site --glob '!node_modules/**' --glob '!dist/**'
+rg "Zuno Pixel|zuno-pixel" site --glob '!node_modules/**' --glob '!dist/**'
+# Replace OLD_BRAND_PATTERN with the retired brand variations.
+rg -i "OLD_BRAND_PATTERN" . --glob '!site/node_modules/**' --glob '!site/dist/**'
 ```
 
-The remaining matches should be intentional configuration, analytics event
-names, package names or documentation.
+Any retired-brand match must be removed or listed in the rebrand history with a
+technical reason. Git history and already-applied migration identifiers are not
+rewritten.
+
+## Rebrand history
+
+The public/product brand changed to Zuno Pixel on 23 August 2026. No source,
+configuration, asset, generated planning artefact or public content requires
+the retired name. Git history is intentionally immutable and remains the only
+historical record.
 
 ## Editing content and pricing
 

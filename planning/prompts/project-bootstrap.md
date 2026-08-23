@@ -1,16 +1,18 @@
-# Bootstrap Prompt — AI-Magnet
+# Bootstrap Prompt — Zuno Pixel
 
 You are bootstrapping a planning and engineering repository, not building the product.
 
 ## Inputs
 
-- Project name: AI-Magnet
-- Description: A production-quality Australian local-business growth system marketing and sales website covering services, pricing, industry pages, an interactive AI receptionist demonstration, and validated lead-capture flows.
+- Project name: Zuno Pixel
+- Description: A production-quality Australian local-business growth platform with a public marketing site, commercial backend, customer account experience, internal administration and future agent-platform integration.
 - Constraints:
 - WCAG 2.2 AA and strong Core Web Vitals
 - Australian English, AUD pricing plus GST, and ethical review practices
 - Central configuration must support a future rebrand
 - Forms must be honest, privacy-preserving, validated, and adapter-based
+- Use a modular monolith with explicit domain and application service boundaries
+- Customer, onboarding, billing, notification and agent-provisioning lifecycles remain separate and auditable
 
 ## Instructions
 

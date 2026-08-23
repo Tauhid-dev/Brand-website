@@ -1,4 +1,4 @@
-# Quality Gates — AI-Magnet
+# Quality Gates — Zuno Pixel
 
 No component is complete until documentation, validation, templates or contracts,
 appropriate examples, cross-references, and versioning are present.

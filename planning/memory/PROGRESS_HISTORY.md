@@ -1,4 +1,4 @@
-# Progress History — AI-Magnet
+# Progress History — Zuno Pixel
 
 Append entries; do not rewrite history. Link each claim to committed evidence.
 

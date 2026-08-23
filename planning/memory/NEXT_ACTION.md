@@ -1,4 +1,4 @@
-# Next Action — AI-Magnet
+# Next Action — Zuno Pixel
 
 Execute **C001 — Foundation and discovery baseline** from `chunks/C001.md`.
 
@@ -14,4 +14,4 @@ Stop when C001 acceptance criteria and completion evidence are satisfied, or whe
 material blocker needs an authorised decision. Update `memory/state.json`, all
 narrative memory, risks, decisions, status, and handoff before ending the session.
 
-Project ID: `b2e195c00813e779`.
+Project ID: `1924e2efcf152558`.

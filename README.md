@@ -1,10 +1,15 @@
 # Project Genesis Framework
 
-> **Project implementation:** This repository now also contains the AI-Magnet
+> **Project implementation:** This repository now also contains the Zuno Pixel
 > public marketing site in [`site/`](site/) and its generated, validated
 > Genesis planning foundation in [`planning/`](planning/). See
-> [`docs/AI_MAGNET_SITE.md`](docs/AI_MAGNET_SITE.md) for brand configuration,
+> [`docs/ZUNO_PIXEL_SITE.md`](docs/ZUNO_PIXEL_SITE.md) for brand configuration,
 > development, integration, SEO, deployment and launch guidance.
+
+Commercial platform planning is documented in
+[`docs/architecture/COMMERCIAL_PLATFORM_DOMAIN.md`](docs/architecture/COMMERCIAL_PLATFORM_DOMAIN.md),
+with controlled delivery stages in
+[`docs/IMPLEMENTATION_PHASES.md`](docs/IMPLEMENTATION_PHASES.md).
 
 Project Genesis is a reusable, deterministic foundation generator for serious
 software projects. Given only a project name, a brief description, and optional

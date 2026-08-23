@@ -1,4 +1,4 @@
-# Completion Evidence — AI-Magnet
+# Completion Evidence — Zuno Pixel
 
 ## Evidence register
 

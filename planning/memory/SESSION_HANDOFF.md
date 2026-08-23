@@ -1,4 +1,4 @@
-# Session Handoff — AI-Magnet
+# Session Handoff — Zuno Pixel
 
 ## Completed
 
