@@ -1,4 +1,5 @@
 import type { EffectiveRange } from "../domain/effective-range.ts";
+import type { Money } from "../domain/money.ts";
 import type {
   BillingInterval,
   CustomerPriceOverride,
@@ -35,4 +36,19 @@ export interface PricingReferenceRepository {
   planExists(planId: string): Promise<boolean>;
   customerExists(customerId: string): Promise<boolean>;
   findActivePlanByCode(code: string): Promise<{ id: string; code: string; name: string } | null>;
+}
+
+export type ResolvedDiscount = {
+  customerDiscountId: string;
+  discountCode: string;
+  amountMinor: number;
+};
+
+export interface DiscountResolutionPort {
+  resolve(input: {
+    customerId: string;
+    planId: string;
+    effectiveAt: Date;
+    charge: Money;
+  }): Promise<{ total: Money; applications: ResolvedDiscount[] }>;
 }

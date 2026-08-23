@@ -13,7 +13,7 @@ import {
   type TaxBehaviour,
 } from "../domain/pricing.ts";
 import { AustralianGstPolicy, PUBLIC_PRICE_TAX_DISCLOSURE } from "../domain/tax-policy.ts";
-import type { PricingReferenceRepository, PricingRepository } from "./ports.ts";
+import type { DiscountResolutionPort, PricingReferenceRepository, PricingRepository } from "./ports.ts";
 
 export type PublishPlanPriceInput = {
   planId: string;
@@ -164,6 +164,7 @@ export class PricingService {
   constructor(
     private readonly prices: PricingRepository,
     private readonly taxPolicy: AustralianGstPolicy = new AustralianGstPolicy(),
+    private readonly discounts: DiscountResolutionPort = new NoDiscountResolver(),
   ) {}
 
   async resolvePrice(input: {
@@ -206,7 +207,16 @@ export class PricingService {
         ? override?.props.setupFee ?? base.props.setupFee
         : new Money(0, base.props.amount.currency),
     );
-    const tax = this.taxPolicy.calculate(charge, base.props.taxBehaviour);
+    const resolvedDiscounts = customerId
+      ? await this.discounts.resolve({
+          customerId: customerId.value,
+          planId: planId.value,
+          effectiveAt: input.effectiveAt,
+          charge,
+        })
+      : { total: new Money(0, charge.currency), applications: [] };
+    const discountedCharge = charge.subtract(resolvedDiscounts.total);
+    const tax = this.taxPolicy.calculate(discountedCharge, base.props.taxBehaviour);
     return Object.freeze({
       planId: planId.value,
       customerId: customerId?.value ?? null,
@@ -216,7 +226,8 @@ export class PricingService {
       overridePriceMinor: override?.props.amount.amountMinor ?? null,
       overrideSetupFeeMinor: override?.props.setupFee.amountMinor ?? null,
       includesSetupFee: includeSetupFee,
-      discountTotalMinor: 0 as const,
+      discounts: Object.freeze(resolvedDiscounts.applications.map((discount) => Object.freeze({ ...discount }))),
+      discountTotalMinor: resolvedDiscounts.total.amountMinor,
       subtotalMinor: tax.subtotal.amountMinor,
       taxMinor: tax.tax.amountMinor,
       totalMinor: tax.total.amountMinor,
@@ -226,6 +237,12 @@ export class PricingService {
       customerOverrideId: override?.props.id.value ?? null,
       effectiveAt: input.effectiveAt.toISOString(),
     });
+  }
+}
+
+class NoDiscountResolver implements DiscountResolutionPort {
+  async resolve(input: { charge: Money }): Promise<{ total: Money; applications: [] }> {
+    return { total: new Money(0, input.charge.currency), applications: [] };
   }
 }
 

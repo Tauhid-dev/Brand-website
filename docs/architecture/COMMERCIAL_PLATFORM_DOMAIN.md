@@ -1,8 +1,8 @@
 # Zuno Pixel commercial platform domain and database design
 
-Status: target design approved for phased implementation. Phases 2 and 3 now
-implement customer, catalogue, pricing and quote foundations; later table groups
-remain target design.
+Status: target design approved for phased implementation. Phases 2–4 now
+implement customer, catalogue, pricing, quote and promotion foundations; later
+table groups remain target design.
 
 ## Architecture decision
 
@@ -96,6 +96,12 @@ price resolver, preview/public providers and immutable quote snapshots. These
 services depend on pricing/reference repository ports; HTTP and UI do not own
 commercial calculations.
 
+Phase 4 implements reusable discount creation, promotion validation/redemption,
+direct assignment, charge-application recording and pricing-resolution services.
+Application services depend on repository, purchase-history, reference, clock
+and ID ports. Atomic redemption limits and immutable history are enforced again
+at the D1 boundary rather than being delegated to HTTP controllers.
+
 ## Target table groups
 
 ### Identity and customers
@@ -123,8 +129,9 @@ authentication/session implementation.
 ### Catalogue and pricing
 
 Phase 2 implements `offerings`, `plans` and `plan_features`. Phase 3 implements
-`plan_prices`, `customer_price_overrides` and `price_quotes`. Promotion tables
-remain deferred to Phase 4.
+`plan_prices`, `customer_price_overrides` and `price_quotes`. Phase 4 implements
+`discounts`, `promotion_codes`, `customer_discounts` and
+`discount_redemptions`.
 
 `offerings`, `plans`, `plan_features`, `plan_prices`,
 `customer_price_overrides`, `discounts`, `promotion_codes`,
@@ -136,18 +143,28 @@ overwritten.
 
 ### Implemented pricing precedence
 
-The single Phase 3 resolver applies:
+The single pricing resolver applies:
 
 1. the active base plan-price version for the requested half-open effective
    range;
 2. an effective customer-specific override, when present;
-3. discounts (currently an explicit zero placeholder until Phase 4);
+3. effective customer discounts, using percentage-before-fixed ordering for a
+   stackable set and comparing that set with the best exclusive offer;
 4. the central Australian GST policy (`EXCLUSIVE`, `INCLUSIVE` or `EXEMPT`).
 
 Money is always a safe integer in minor units and currencies must match. The
 existing public decision remains AUD pricing excluding GST. Quote rows persist
 the resolver's complete version/override/tax breakdown as immutable JSON plus
 queryable totals.
+
+Promotion codes are uppercase-normalised and may be generic or constrained by
+customer, plan, effective dates, first purchase and redemption limits. Discount
+definitions use lowercase stable codes, percentage basis points or fixed minor
+units, `ONCE`/`REPEATING`/`FOREVER` duration and an explicit stacking flag.
+Claims and charge applications are append-only, idempotent redemption events.
+The optional subscription scope on customer discounts remains deferred until
+Phase 5 creates the referenced subscription aggregate; no placeholder foreign
+key or unvalidated identifier is stored.
 
 ### Subscription, billing and service access
 
@@ -214,7 +231,8 @@ service notices, retries, provider IDs and audit correlation remain explicit.
 ## Migration strategy
 
 Phase 2 activates D1 and introduces the first forward-only migration for
-customer/catalogue foundations. Subsequent phases add owned tables. Applied
-migrations are never renamed or rewritten. Every migration receives clean-
-install and upgrade validation. Phase 1 intentionally has no migration because
-the target schema is not yet implemented.
+customer/catalogue foundations. Phase 3 adds pricing and Phase 4 adds promotion
+persistence through consecutive forward-only migrations. Subsequent phases add
+owned tables. Applied migrations are never renamed or rewritten. Every migration
+receives clean-install and upgrade validation. Phase 1 intentionally has no
+migration because the target schema is not yet implemented.

@@ -31,6 +31,10 @@ export class Money {
   }
 
   taxAtBasisPoints(basisPoints: number): Money {
+    return this.multiplyBasisPoints(basisPoints);
+  }
+
+  multiplyBasisPoints(basisPoints: number): Money {
     if (!Number.isSafeInteger(basisPoints) || basisPoints < 0 || basisPoints > 10_000) {
       throw new DomainValidationError("INVALID_TAX_RATE", "Tax rate must be valid basis points.");
     }

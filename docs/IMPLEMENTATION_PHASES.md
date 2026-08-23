@@ -34,6 +34,8 @@ provider. Concurrency and effective-range conflicts are tested.
 
 ## Phase 4 — Discounts and promotion codes
 
+Status: complete (23 August 2026).
+
 Discount definitions, coupon restrictions, direct customer discounts,
 transaction-safe redemption and stacking/currency/duration policies.
 

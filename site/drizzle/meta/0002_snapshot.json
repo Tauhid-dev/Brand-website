@@ -1,0 +1,2208 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "98852cad-a126-4cfe-92ce-fb245042a427",
+  "prevId": "90643886-3948-4090-84c2-4bf5d2022c14",
+  "tables": {
+    "customer_business_profiles": {
+      "name": "customer_business_profiles",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "business_name": {
+          "name": "business_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "trading_name": {
+          "name": "trading_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "abn": {
+          "name": "abn",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "website_url": {
+          "name": "website_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "primary_email": {
+          "name": "primary_email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "primary_phone": {
+          "name": "primary_phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "industry": {
+          "name": "industry",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "timezone": {
+          "name": "timezone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'Australia/Sydney'"
+        },
+        "country": {
+          "name": "country",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'AU'"
+        },
+        "state": {
+          "name": "state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "suburb": {
+          "name": "suburb",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "postcode": {
+          "name": "postcode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "customer_business_profiles_customer_uq": {
+          "name": "customer_business_profiles_customer_uq",
+          "columns": [
+            "customer_id"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "customer_business_profiles_customer_id_customers_id_fk": {
+          "name": "customer_business_profiles_customer_id_customers_id_fk",
+          "tableFrom": "customer_business_profiles",
+          "tableTo": "customers",
+          "columnsFrom": [
+            "customer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "customer_business_profiles_country_check": {
+          "name": "customer_business_profiles_country_check",
+          "value": "\"customer_business_profiles\".\"country\" = 'AU'"
+        },
+        "customer_business_profiles_timestamps_check": {
+          "name": "customer_business_profiles_timestamps_check",
+          "value": "\"customer_business_profiles\".\"updated_at\" >= \"customer_business_profiles\".\"created_at\""
+        }
+      }
+    },
+    "customer_discounts": {
+      "name": "customer_discounts",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "discount_id": {
+          "name": "discount_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "promotion_code_id": {
+          "name": "promotion_code_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "effective_from": {
+          "name": "effective_from",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "effective_to": {
+          "name": "effective_to",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "applied_by": {
+          "name": "applied_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "customer_discounts_effective_lookup_idx": {
+          "name": "customer_discounts_effective_lookup_idx",
+          "columns": [
+            "customer_id",
+            "status",
+            "effective_from",
+            "effective_to"
+          ],
+          "isUnique": false
+        },
+        "customer_discounts_discount_idx": {
+          "name": "customer_discounts_discount_idx",
+          "columns": [
+            "discount_id"
+          ],
+          "isUnique": false
+        },
+        "customer_discounts_promotion_idx": {
+          "name": "customer_discounts_promotion_idx",
+          "columns": [
+            "promotion_code_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "customer_discounts_customer_id_customers_id_fk": {
+          "name": "customer_discounts_customer_id_customers_id_fk",
+          "tableFrom": "customer_discounts",
+          "tableTo": "customers",
+          "columnsFrom": [
+            "customer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "customer_discounts_discount_id_discounts_id_fk": {
+          "name": "customer_discounts_discount_id_discounts_id_fk",
+          "tableFrom": "customer_discounts",
+          "tableTo": "discounts",
+          "columnsFrom": [
+            "discount_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "customer_discounts_promotion_code_id_promotion_codes_id_fk": {
+          "name": "customer_discounts_promotion_code_id_promotion_codes_id_fk",
+          "tableFrom": "customer_discounts",
+          "tableTo": "promotion_codes",
+          "columnsFrom": [
+            "promotion_code_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "customer_discounts_source_check": {
+          "name": "customer_discounts_source_check",
+          "value": "\"customer_discounts\".\"source\" in ('ADMIN', 'PROMOTION_CODE', 'SALES', 'MIGRATION', 'SYSTEM')"
+        },
+        "customer_discounts_status_check": {
+          "name": "customer_discounts_status_check",
+          "value": "\"customer_discounts\".\"status\" in ('SCHEDULED', 'ACTIVE', 'EXPIRED', 'REVOKED')"
+        },
+        "customer_discounts_range_check": {
+          "name": "customer_discounts_range_check",
+          "value": "\"customer_discounts\".\"effective_to\" is null or \"customer_discounts\".\"effective_to\" > \"customer_discounts\".\"effective_from\""
+        },
+        "customer_discounts_timestamps_check": {
+          "name": "customer_discounts_timestamps_check",
+          "value": "\"customer_discounts\".\"updated_at\" >= \"customer_discounts\".\"created_at\""
+        }
+      }
+    },
+    "customer_identities": {
+      "name": "customer_identities",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "provider": {
+          "name": "provider",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "external_subject": {
+          "name": "external_subject",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "customer_identities_provider_subject_uq": {
+          "name": "customer_identities_provider_subject_uq",
+          "columns": [
+            "provider",
+            "external_subject"
+          ],
+          "isUnique": true
+        },
+        "customer_identities_customer_idx": {
+          "name": "customer_identities_customer_idx",
+          "columns": [
+            "customer_id"
+          ],
+          "isUnique": false
+        },
+        "customer_identities_email_idx": {
+          "name": "customer_identities_email_idx",
+          "columns": [
+            "email"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "customer_identities_customer_id_customers_id_fk": {
+          "name": "customer_identities_customer_id_customers_id_fk",
+          "tableFrom": "customer_identities",
+          "tableTo": "customers",
+          "columnsFrom": [
+            "customer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "customer_invitations": {
+      "name": "customer_invitations",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "token_hash": {
+          "name": "token_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "invited_by": {
+          "name": "invited_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "accepted_at": {
+          "name": "accepted_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "customer_invitations_token_hash_uq": {
+          "name": "customer_invitations_token_hash_uq",
+          "columns": [
+            "token_hash"
+          ],
+          "isUnique": true
+        },
+        "customer_invitations_email_status_idx": {
+          "name": "customer_invitations_email_status_idx",
+          "columns": [
+            "email",
+            "status"
+          ],
+          "isUnique": false
+        },
+        "customer_invitations_customer_idx": {
+          "name": "customer_invitations_customer_idx",
+          "columns": [
+            "customer_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "customer_invitations_customer_id_customers_id_fk": {
+          "name": "customer_invitations_customer_id_customers_id_fk",
+          "tableFrom": "customer_invitations",
+          "tableTo": "customers",
+          "columnsFrom": [
+            "customer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "customer_invitations_status_check": {
+          "name": "customer_invitations_status_check",
+          "value": "\"customer_invitations\".\"status\" in ('PENDING', 'ACCEPTED', 'EXPIRED', 'REVOKED')"
+        },
+        "customer_invitations_expiry_check": {
+          "name": "customer_invitations_expiry_check",
+          "value": "\"customer_invitations\".\"expires_at\" > \"customer_invitations\".\"created_at\""
+        },
+        "customer_invitations_acceptance_check": {
+          "name": "customer_invitations_acceptance_check",
+          "value": "(\"customer_invitations\".\"status\" = 'ACCEPTED' and \"customer_invitations\".\"accepted_at\" is not null) or (\"customer_invitations\".\"status\" <> 'ACCEPTED' and \"customer_invitations\".\"accepted_at\" is null)"
+        }
+      }
+    },
+    "customer_notes": {
+      "name": "customer_notes",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "author_type": {
+          "name": "author_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "author_id": {
+          "name": "author_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "customer_notes_customer_created_idx": {
+          "name": "customer_notes_customer_created_idx",
+          "columns": [
+            "customer_id",
+            "created_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "customer_notes_customer_id_customers_id_fk": {
+          "name": "customer_notes_customer_id_customers_id_fk",
+          "tableFrom": "customer_notes",
+          "tableTo": "customers",
+          "columnsFrom": [
+            "customer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "customer_notes_author_type_check": {
+          "name": "customer_notes_author_type_check",
+          "value": "\"customer_notes\".\"author_type\" in ('ADMIN', 'SYSTEM')"
+        }
+      }
+    },
+    "customer_price_overrides": {
+      "name": "customer_price_overrides",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "plan_id": {
+          "name": "plan_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "currency": {
+          "name": "currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "billing_interval": {
+          "name": "billing_interval",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "override_amount_minor": {
+          "name": "override_amount_minor",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "override_setup_fee_minor": {
+          "name": "override_setup_fee_minor",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "effective_from": {
+          "name": "effective_from",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "effective_to": {
+          "name": "effective_to",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "customer_price_overrides_scope_start_uq": {
+          "name": "customer_price_overrides_scope_start_uq",
+          "columns": [
+            "customer_id",
+            "plan_id",
+            "billing_interval",
+            "effective_from"
+          ],
+          "isUnique": true
+        },
+        "customer_price_overrides_effective_lookup_idx": {
+          "name": "customer_price_overrides_effective_lookup_idx",
+          "columns": [
+            "customer_id",
+            "plan_id",
+            "billing_interval",
+            "status",
+            "effective_from",
+            "effective_to"
+          ],
+          "isUnique": false
+        },
+        "customer_price_overrides_plan_idx": {
+          "name": "customer_price_overrides_plan_idx",
+          "columns": [
+            "plan_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "customer_price_overrides_customer_id_customers_id_fk": {
+          "name": "customer_price_overrides_customer_id_customers_id_fk",
+          "tableFrom": "customer_price_overrides",
+          "tableTo": "customers",
+          "columnsFrom": [
+            "customer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "customer_price_overrides_plan_id_plans_id_fk": {
+          "name": "customer_price_overrides_plan_id_plans_id_fk",
+          "tableFrom": "customer_price_overrides",
+          "tableTo": "plans",
+          "columnsFrom": [
+            "plan_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "customer_price_overrides_currency_check": {
+          "name": "customer_price_overrides_currency_check",
+          "value": "length(\"customer_price_overrides\".\"currency\") = 3 and \"customer_price_overrides\".\"currency\" = upper(\"customer_price_overrides\".\"currency\")"
+        },
+        "customer_price_overrides_interval_check": {
+          "name": "customer_price_overrides_interval_check",
+          "value": "\"customer_price_overrides\".\"billing_interval\" in ('MONTHLY', 'ANNUAL')"
+        },
+        "customer_price_overrides_amount_check": {
+          "name": "customer_price_overrides_amount_check",
+          "value": "\"customer_price_overrides\".\"override_amount_minor\" >= 0 and \"customer_price_overrides\".\"override_setup_fee_minor\" >= 0"
+        },
+        "customer_price_overrides_status_check": {
+          "name": "customer_price_overrides_status_check",
+          "value": "\"customer_price_overrides\".\"status\" in ('SCHEDULED', 'ACTIVE', 'EXPIRED', 'REVOKED')"
+        },
+        "customer_price_overrides_range_check": {
+          "name": "customer_price_overrides_range_check",
+          "value": "\"customer_price_overrides\".\"effective_to\" is null or \"customer_price_overrides\".\"effective_to\" > \"customer_price_overrides\".\"effective_from\""
+        },
+        "customer_price_overrides_timestamps_check": {
+          "name": "customer_price_overrides_timestamps_check",
+          "value": "\"customer_price_overrides\".\"updated_at\" >= \"customer_price_overrides\".\"created_at\""
+        }
+      }
+    },
+    "customers": {
+      "name": "customers",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "external_reference": {
+          "name": "external_reference",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "business_name": {
+          "name": "business_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "contact_name": {
+          "name": "contact_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "phone": {
+          "name": "phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "industry": {
+          "name": "industry",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "website_url": {
+          "name": "website_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "creation_source": {
+          "name": "creation_source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "customers_external_reference_uq": {
+          "name": "customers_external_reference_uq",
+          "columns": [
+            "external_reference"
+          ],
+          "isUnique": true
+        },
+        "customers_email_uq": {
+          "name": "customers_email_uq",
+          "columns": [
+            "email"
+          ],
+          "isUnique": true
+        },
+        "customers_status_idx": {
+          "name": "customers_status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        },
+        "customers_created_at_idx": {
+          "name": "customers_created_at_idx",
+          "columns": [
+            "created_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "customers_status_check": {
+          "name": "customers_status_check",
+          "value": "\"customers\".\"status\" in ('PROSPECT', 'ACTIVE', 'SUSPENDED', 'CANCELLED', 'ARCHIVED')"
+        },
+        "customers_creation_source_check": {
+          "name": "customers_creation_source_check",
+          "value": "\"customers\".\"creation_source\" in ('SELF_REGISTRATION', 'ADMIN', 'INVITATION', 'MIGRATION')"
+        },
+        "customers_timestamps_check": {
+          "name": "customers_timestamps_check",
+          "value": "\"customers\".\"updated_at\" >= \"customers\".\"created_at\""
+        }
+      }
+    },
+    "discount_redemptions": {
+      "name": "discount_redemptions",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "discount_id": {
+          "name": "discount_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "promotion_code_id": {
+          "name": "promotion_code_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "customer_discount_id": {
+          "name": "customer_discount_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "plan_id": {
+          "name": "plan_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "redemption_type": {
+          "name": "redemption_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "idempotency_key": {
+          "name": "idempotency_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "amount_discounted_minor": {
+          "name": "amount_discounted_minor",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "currency": {
+          "name": "currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "redeemed_at": {
+          "name": "redeemed_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "discount_redemptions_idempotency_uq": {
+          "name": "discount_redemptions_idempotency_uq",
+          "columns": [
+            "idempotency_key"
+          ],
+          "isUnique": true
+        },
+        "discount_redemptions_promotion_idx": {
+          "name": "discount_redemptions_promotion_idx",
+          "columns": [
+            "promotion_code_id",
+            "redeemed_at"
+          ],
+          "isUnique": false
+        },
+        "discount_redemptions_discount_idx": {
+          "name": "discount_redemptions_discount_idx",
+          "columns": [
+            "discount_id",
+            "redeemed_at"
+          ],
+          "isUnique": false
+        },
+        "discount_redemptions_customer_idx": {
+          "name": "discount_redemptions_customer_idx",
+          "columns": [
+            "customer_id",
+            "redeemed_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "discount_redemptions_discount_id_discounts_id_fk": {
+          "name": "discount_redemptions_discount_id_discounts_id_fk",
+          "tableFrom": "discount_redemptions",
+          "tableTo": "discounts",
+          "columnsFrom": [
+            "discount_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "discount_redemptions_promotion_code_id_promotion_codes_id_fk": {
+          "name": "discount_redemptions_promotion_code_id_promotion_codes_id_fk",
+          "tableFrom": "discount_redemptions",
+          "tableTo": "promotion_codes",
+          "columnsFrom": [
+            "promotion_code_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "discount_redemptions_customer_discount_id_customer_discounts_id_fk": {
+          "name": "discount_redemptions_customer_discount_id_customer_discounts_id_fk",
+          "tableFrom": "discount_redemptions",
+          "tableTo": "customer_discounts",
+          "columnsFrom": [
+            "customer_discount_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "discount_redemptions_customer_id_customers_id_fk": {
+          "name": "discount_redemptions_customer_id_customers_id_fk",
+          "tableFrom": "discount_redemptions",
+          "tableTo": "customers",
+          "columnsFrom": [
+            "customer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "discount_redemptions_plan_id_plans_id_fk": {
+          "name": "discount_redemptions_plan_id_plans_id_fk",
+          "tableFrom": "discount_redemptions",
+          "tableTo": "plans",
+          "columnsFrom": [
+            "plan_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "discount_redemptions_type_check": {
+          "name": "discount_redemptions_type_check",
+          "value": "\"discount_redemptions\".\"redemption_type\" in ('PROMOTION_CLAIM', 'CHARGE_APPLICATION')"
+        },
+        "discount_redemptions_amount_check": {
+          "name": "discount_redemptions_amount_check",
+          "value": "\"discount_redemptions\".\"amount_discounted_minor\" >= 0 and length(\"discount_redemptions\".\"currency\") = 3 and \"discount_redemptions\".\"currency\" = upper(\"discount_redemptions\".\"currency\")"
+        },
+        "discount_redemptions_claim_check": {
+          "name": "discount_redemptions_claim_check",
+          "value": "(\"discount_redemptions\".\"redemption_type\" = 'PROMOTION_CLAIM' and \"discount_redemptions\".\"promotion_code_id\" is not null and \"discount_redemptions\".\"amount_discounted_minor\" = 0) or (\"discount_redemptions\".\"redemption_type\" = 'CHARGE_APPLICATION' and \"discount_redemptions\".\"amount_discounted_minor\" > 0)"
+        }
+      }
+    },
+    "discounts": {
+      "name": "discounts",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "discount_type": {
+          "name": "discount_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "percent_off_basis_points": {
+          "name": "percent_off_basis_points",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "amount_off_minor": {
+          "name": "amount_off_minor",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "currency": {
+          "name": "currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "duration_type": {
+          "name": "duration_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "duration_months": {
+          "name": "duration_months",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "starts_at": {
+          "name": "starts_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "ends_at": {
+          "name": "ends_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "max_redemptions": {
+          "name": "max_redemptions",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "active": {
+          "name": "active",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "stackable": {
+          "name": "stackable",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "discounts_code_uq": {
+          "name": "discounts_code_uq",
+          "columns": [
+            "code"
+          ],
+          "isUnique": true
+        },
+        "discounts_effective_lookup_idx": {
+          "name": "discounts_effective_lookup_idx",
+          "columns": [
+            "active",
+            "starts_at",
+            "ends_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "discounts_code_check": {
+          "name": "discounts_code_check",
+          "value": "\"discounts\".\"code\" = lower(\"discounts\".\"code\")"
+        },
+        "discounts_type_check": {
+          "name": "discounts_type_check",
+          "value": "\"discounts\".\"discount_type\" in ('PERCENTAGE', 'FIXED_AMOUNT')"
+        },
+        "discounts_value_check": {
+          "name": "discounts_value_check",
+          "value": "(\"discounts\".\"discount_type\" = 'PERCENTAGE' and \"discounts\".\"percent_off_basis_points\" between 1 and 10000 and \"discounts\".\"amount_off_minor\" is null and \"discounts\".\"currency\" is null) or (\"discounts\".\"discount_type\" = 'FIXED_AMOUNT' and \"discounts\".\"percent_off_basis_points\" is null and \"discounts\".\"amount_off_minor\" > 0 and length(\"discounts\".\"currency\") = 3 and \"discounts\".\"currency\" = upper(\"discounts\".\"currency\"))"
+        },
+        "discounts_duration_check": {
+          "name": "discounts_duration_check",
+          "value": "(\"discounts\".\"duration_type\" = 'REPEATING' and \"discounts\".\"duration_months\" > 0) or (\"discounts\".\"duration_type\" in ('ONCE', 'FOREVER') and \"discounts\".\"duration_months\" is null)"
+        },
+        "discounts_range_check": {
+          "name": "discounts_range_check",
+          "value": "\"discounts\".\"ends_at\" is null or \"discounts\".\"ends_at\" > \"discounts\".\"starts_at\""
+        },
+        "discounts_max_redemptions_check": {
+          "name": "discounts_max_redemptions_check",
+          "value": "\"discounts\".\"max_redemptions\" is null or \"discounts\".\"max_redemptions\" > 0"
+        },
+        "discounts_timestamps_check": {
+          "name": "discounts_timestamps_check",
+          "value": "\"discounts\".\"updated_at\" >= \"discounts\".\"created_at\""
+        }
+      }
+    },
+    "offerings": {
+      "name": "offerings",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "active": {
+          "name": "active",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "display_order": {
+          "name": "display_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "offerings_code_uq": {
+          "name": "offerings_code_uq",
+          "columns": [
+            "code"
+          ],
+          "isUnique": true
+        },
+        "offerings_active_order_idx": {
+          "name": "offerings_active_order_idx",
+          "columns": [
+            "active",
+            "display_order"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "offerings_display_order_check": {
+          "name": "offerings_display_order_check",
+          "value": "\"offerings\".\"display_order\" >= 0"
+        },
+        "offerings_timestamps_check": {
+          "name": "offerings_timestamps_check",
+          "value": "\"offerings\".\"updated_at\" >= \"offerings\".\"created_at\""
+        }
+      }
+    },
+    "plan_features": {
+      "name": "plan_features",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "plan_id": {
+          "name": "plan_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "offering_id": {
+          "name": "offering_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "included": {
+          "name": "included",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "limit_value": {
+          "name": "limit_value",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "limit_unit": {
+          "name": "limit_unit",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "configuration_json": {
+          "name": "configuration_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "plan_features_plan_offering_uq": {
+          "name": "plan_features_plan_offering_uq",
+          "columns": [
+            "plan_id",
+            "offering_id"
+          ],
+          "isUnique": true
+        },
+        "plan_features_offering_idx": {
+          "name": "plan_features_offering_idx",
+          "columns": [
+            "offering_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "plan_features_plan_id_plans_id_fk": {
+          "name": "plan_features_plan_id_plans_id_fk",
+          "tableFrom": "plan_features",
+          "tableTo": "plans",
+          "columnsFrom": [
+            "plan_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "plan_features_offering_id_offerings_id_fk": {
+          "name": "plan_features_offering_id_offerings_id_fk",
+          "tableFrom": "plan_features",
+          "tableTo": "offerings",
+          "columnsFrom": [
+            "offering_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "plan_features_limit_check": {
+          "name": "plan_features_limit_check",
+          "value": "\"plan_features\".\"limit_value\" is null or \"plan_features\".\"limit_value\" >= 0"
+        },
+        "plan_features_limit_unit_check": {
+          "name": "plan_features_limit_unit_check",
+          "value": "(\"plan_features\".\"limit_value\" is null and \"plan_features\".\"limit_unit\" is null) or (\"plan_features\".\"limit_value\" is not null and \"plan_features\".\"limit_unit\" is not null)"
+        },
+        "plan_features_inclusion_check": {
+          "name": "plan_features_inclusion_check",
+          "value": "\"plan_features\".\"included\" = 1 or \"plan_features\".\"limit_value\" is null"
+        },
+        "plan_features_timestamps_check": {
+          "name": "plan_features_timestamps_check",
+          "value": "\"plan_features\".\"updated_at\" >= \"plan_features\".\"created_at\""
+        }
+      }
+    },
+    "plan_prices": {
+      "name": "plan_prices",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "plan_id": {
+          "name": "plan_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "currency": {
+          "name": "currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "billing_interval": {
+          "name": "billing_interval",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "amount_minor": {
+          "name": "amount_minor",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "setup_fee_minor": {
+          "name": "setup_fee_minor",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "tax_behaviour": {
+          "name": "tax_behaviour",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "effective_from": {
+          "name": "effective_from",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "effective_to": {
+          "name": "effective_to",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "active": {
+          "name": "active",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "plan_prices_scope_start_uq": {
+          "name": "plan_prices_scope_start_uq",
+          "columns": [
+            "plan_id",
+            "billing_interval",
+            "effective_from"
+          ],
+          "isUnique": true
+        },
+        "plan_prices_effective_lookup_idx": {
+          "name": "plan_prices_effective_lookup_idx",
+          "columns": [
+            "plan_id",
+            "billing_interval",
+            "active",
+            "effective_from",
+            "effective_to"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "plan_prices_plan_id_plans_id_fk": {
+          "name": "plan_prices_plan_id_plans_id_fk",
+          "tableFrom": "plan_prices",
+          "tableTo": "plans",
+          "columnsFrom": [
+            "plan_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "plan_prices_currency_check": {
+          "name": "plan_prices_currency_check",
+          "value": "length(\"plan_prices\".\"currency\") = 3 and \"plan_prices\".\"currency\" = upper(\"plan_prices\".\"currency\")"
+        },
+        "plan_prices_interval_check": {
+          "name": "plan_prices_interval_check",
+          "value": "\"plan_prices\".\"billing_interval\" in ('MONTHLY', 'ANNUAL')"
+        },
+        "plan_prices_amount_check": {
+          "name": "plan_prices_amount_check",
+          "value": "\"plan_prices\".\"amount_minor\" >= 0 and \"plan_prices\".\"setup_fee_minor\" >= 0"
+        },
+        "plan_prices_tax_check": {
+          "name": "plan_prices_tax_check",
+          "value": "\"plan_prices\".\"tax_behaviour\" in ('EXCLUSIVE', 'INCLUSIVE', 'EXEMPT')"
+        },
+        "plan_prices_range_check": {
+          "name": "plan_prices_range_check",
+          "value": "\"plan_prices\".\"effective_to\" is null or \"plan_prices\".\"effective_to\" > \"plan_prices\".\"effective_from\""
+        }
+      }
+    },
+    "plans": {
+      "name": "plans",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "active": {
+          "name": "active",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "featured": {
+          "name": "featured",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "custom": {
+          "name": "custom",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "display_order": {
+          "name": "display_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "plans_code_uq": {
+          "name": "plans_code_uq",
+          "columns": [
+            "code"
+          ],
+          "isUnique": true
+        },
+        "plans_active_order_idx": {
+          "name": "plans_active_order_idx",
+          "columns": [
+            "active",
+            "display_order"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "plans_display_order_check": {
+          "name": "plans_display_order_check",
+          "value": "\"plans\".\"display_order\" >= 0"
+        },
+        "plans_timestamps_check": {
+          "name": "plans_timestamps_check",
+          "value": "\"plans\".\"updated_at\" >= \"plans\".\"created_at\""
+        }
+      }
+    },
+    "price_quotes": {
+      "name": "price_quotes",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "plan_id": {
+          "name": "plan_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "billing_interval": {
+          "name": "billing_interval",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "base_price_minor": {
+          "name": "base_price_minor",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "override_price_minor": {
+          "name": "override_price_minor",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "discount_total_minor": {
+          "name": "discount_total_minor",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "subtotal_minor": {
+          "name": "subtotal_minor",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tax_minor": {
+          "name": "tax_minor",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "total_minor": {
+          "name": "total_minor",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "currency": {
+          "name": "currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "pricing_snapshot_json": {
+          "name": "pricing_snapshot_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "valid_until": {
+          "name": "valid_until",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "price_quotes_customer_created_idx": {
+          "name": "price_quotes_customer_created_idx",
+          "columns": [
+            "customer_id",
+            "created_at"
+          ],
+          "isUnique": false
+        },
+        "price_quotes_plan_created_idx": {
+          "name": "price_quotes_plan_created_idx",
+          "columns": [
+            "plan_id",
+            "created_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "price_quotes_customer_id_customers_id_fk": {
+          "name": "price_quotes_customer_id_customers_id_fk",
+          "tableFrom": "price_quotes",
+          "tableTo": "customers",
+          "columnsFrom": [
+            "customer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "price_quotes_plan_id_plans_id_fk": {
+          "name": "price_quotes_plan_id_plans_id_fk",
+          "tableFrom": "price_quotes",
+          "tableTo": "plans",
+          "columnsFrom": [
+            "plan_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "price_quotes_interval_check": {
+          "name": "price_quotes_interval_check",
+          "value": "\"price_quotes\".\"billing_interval\" in ('MONTHLY', 'ANNUAL')"
+        },
+        "price_quotes_currency_check": {
+          "name": "price_quotes_currency_check",
+          "value": "length(\"price_quotes\".\"currency\") = 3 and \"price_quotes\".\"currency\" = upper(\"price_quotes\".\"currency\")"
+        },
+        "price_quotes_amounts_check": {
+          "name": "price_quotes_amounts_check",
+          "value": "\"price_quotes\".\"base_price_minor\" >= 0 and (\"price_quotes\".\"override_price_minor\" is null or \"price_quotes\".\"override_price_minor\" >= 0) and \"price_quotes\".\"discount_total_minor\" >= 0 and \"price_quotes\".\"subtotal_minor\" >= 0 and \"price_quotes\".\"tax_minor\" >= 0 and \"price_quotes\".\"total_minor\" = \"price_quotes\".\"subtotal_minor\" + \"price_quotes\".\"tax_minor\""
+        },
+        "price_quotes_validity_check": {
+          "name": "price_quotes_validity_check",
+          "value": "\"price_quotes\".\"valid_until\" > \"price_quotes\".\"created_at\""
+        }
+      }
+    },
+    "promotion_codes": {
+      "name": "promotion_codes",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "discount_id": {
+          "name": "discount_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "active": {
+          "name": "active",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "plan_id": {
+          "name": "plan_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "starts_at": {
+          "name": "starts_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "max_redemptions": {
+          "name": "max_redemptions",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "redemption_count": {
+          "name": "redemption_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "first_purchase_only": {
+          "name": "first_purchase_only",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "promotion_codes_code_uq": {
+          "name": "promotion_codes_code_uq",
+          "columns": [
+            "code"
+          ],
+          "isUnique": true
+        },
+        "promotion_codes_discount_idx": {
+          "name": "promotion_codes_discount_idx",
+          "columns": [
+            "discount_id"
+          ],
+          "isUnique": false
+        },
+        "promotion_codes_effective_lookup_idx": {
+          "name": "promotion_codes_effective_lookup_idx",
+          "columns": [
+            "active",
+            "starts_at",
+            "expires_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "promotion_codes_discount_id_discounts_id_fk": {
+          "name": "promotion_codes_discount_id_discounts_id_fk",
+          "tableFrom": "promotion_codes",
+          "tableTo": "discounts",
+          "columnsFrom": [
+            "discount_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "promotion_codes_customer_id_customers_id_fk": {
+          "name": "promotion_codes_customer_id_customers_id_fk",
+          "tableFrom": "promotion_codes",
+          "tableTo": "customers",
+          "columnsFrom": [
+            "customer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "promotion_codes_plan_id_plans_id_fk": {
+          "name": "promotion_codes_plan_id_plans_id_fk",
+          "tableFrom": "promotion_codes",
+          "tableTo": "plans",
+          "columnsFrom": [
+            "plan_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "promotion_codes_normalised_check": {
+          "name": "promotion_codes_normalised_check",
+          "value": "\"promotion_codes\".\"code\" = upper(\"promotion_codes\".\"code\") and length(\"promotion_codes\".\"code\") between 3 and 64"
+        },
+        "promotion_codes_range_check": {
+          "name": "promotion_codes_range_check",
+          "value": "\"promotion_codes\".\"expires_at\" is null or \"promotion_codes\".\"expires_at\" > \"promotion_codes\".\"starts_at\""
+        },
+        "promotion_codes_redemption_check": {
+          "name": "promotion_codes_redemption_check",
+          "value": "\"promotion_codes\".\"redemption_count\" >= 0 and (\"promotion_codes\".\"max_redemptions\" is null or (\"promotion_codes\".\"max_redemptions\" > 0 and \"promotion_codes\".\"redemption_count\" <= \"promotion_codes\".\"max_redemptions\"))"
+        },
+        "promotion_codes_timestamps_check": {
+          "name": "promotion_codes_timestamps_check",
+          "value": "\"promotion_codes\".\"updated_at\" >= \"promotion_codes\".\"created_at\""
+        }
+      }
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}
