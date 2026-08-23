@@ -1,7 +1,8 @@
 # Zuno Pixel commercial platform domain and database design
 
-Status: target design approved for phased implementation. Phase 2 now implements
-the customer and catalogue foundation; later table groups remain target design.
+Status: target design approved for phased implementation. Phases 2 and 3 now
+implement customer, catalogue, pricing and quote foundations; later table groups
+remain target design.
 
 ## Architecture decision
 
@@ -90,6 +91,11 @@ Phase 2 implements `CreateCustomerService`, `RegisterCustomerService` and
 Token issuance/delivery implementations and authentication/session policy stay
 in Phase 6; the application layer stores only invitation hashes.
 
+Phase 3 implements version publication, negotiated overrides, one effective
+price resolver, preview/public providers and immutable quote snapshots. These
+services depend on pricing/reference repository ports; HTTP and UI do not own
+commercial calculations.
+
 ## Target table groups
 
 ### Identity and customers
@@ -116,8 +122,9 @@ authentication/session implementation.
 
 ### Catalogue and pricing
 
-Phase 2 implements `offerings`, `plans` and `plan_features`. Pricing and
-promotion tables remain deferred to Phases 3 and 4.
+Phase 2 implements `offerings`, `plans` and `plan_features`. Phase 3 implements
+`plan_prices`, `customer_price_overrides` and `price_quotes`. Promotion tables
+remain deferred to Phase 4.
 
 `offerings`, `plans`, `plan_features`, `plan_prices`,
 `customer_price_overrides`, `discounts`, `promotion_codes`,
@@ -126,6 +133,21 @@ mission model. Codes are stable and case-normalised. Money is integer minor
 units. Effective ranges use checks (`effective_to > effective_from`) and queries
 are supported by plan/customer/date indexes. Historical price rows are never
 overwritten.
+
+### Implemented pricing precedence
+
+The single Phase 3 resolver applies:
+
+1. the active base plan-price version for the requested half-open effective
+   range;
+2. an effective customer-specific override, when present;
+3. discounts (currently an explicit zero placeholder until Phase 4);
+4. the central Australian GST policy (`EXCLUSIVE`, `INCLUSIVE` or `EXEMPT`).
+
+Money is always a safe integer in minor units and currencies must match. The
+existing public decision remains AUD pricing excluding GST. Quote rows persist
+the resolver's complete version/override/tax breakdown as immutable JSON plus
+queryable totals.
 
 ### Subscription, billing and service access
 

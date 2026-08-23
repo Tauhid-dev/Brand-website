@@ -1,87 +1,13 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
-import { drizzle } from "drizzle-orm/d1";
-import * as schema from "../db/schema.ts";
 import { D1CatalogueRepository } from "../modules/catalogue/infrastructure/d1-catalogue-repository.ts";
 import { Offering, Plan, createPlanFeature } from "../modules/catalogue/domain/catalogue.ts";
 import { D1CustomerRepository } from "../modules/customer/infrastructure/d1-customer-repositories.ts";
 import { Customer, CustomerBusinessProfile } from "../modules/customer/domain/customer.ts";
 import { EmailAddress, EntityId, StableCode } from "../modules/shared/domain/value-objects.ts";
+import { repositoryDatabase } from "./support/sqlite-d1.ts";
 
 const NOW = new Date("2026-08-23T00:00:00.000Z");
-const MIGRATION = readFileSync(
-  new URL("../drizzle/0000_uneven_violations.sql", import.meta.url),
-  "utf8",
-);
-
-class SQLiteD1PreparedStatement {
-  constructor(
-    private readonly database: DatabaseSync,
-    private readonly query: string,
-    private readonly values: readonly unknown[] = [],
-  ) {}
-
-  bind(...values: unknown[]): SQLiteD1PreparedStatement {
-    return new SQLiteD1PreparedStatement(this.database, this.query, values);
-  }
-
-  async all(): Promise<{ success: true; results: Record<string, unknown>[] }> {
-    const statement = this.database.prepare(this.query);
-    const results = statement.all(...(this.values as never[])) as Record<string, unknown>[];
-    return { success: true, results };
-  }
-
-  async raw(): Promise<unknown[][]> {
-    const { results } = await this.all();
-    return results.map((row) => Object.values(row));
-  }
-
-  async run(): Promise<{ success: true; results: never[]; meta: { changes: number } }> {
-    const result = this.database.prepare(this.query).run(...(this.values as never[]));
-    return { success: true, results: [], meta: { changes: Number(result.changes) } };
-  }
-}
-
-class SQLiteD1Database {
-  readonly database = new DatabaseSync(":memory:");
-
-  constructor() {
-    this.database.exec("PRAGMA foreign_keys = ON");
-    for (const statement of MIGRATION.split("--> statement-breakpoint")) {
-      if (statement.trim()) this.database.exec(statement);
-    }
-  }
-
-  prepare(query: string): SQLiteD1PreparedStatement {
-    return new SQLiteD1PreparedStatement(this.database, query);
-  }
-
-  async batch(statements: SQLiteD1PreparedStatement[]) {
-    this.database.exec("BEGIN");
-    try {
-      const results = [];
-      for (const statement of statements) results.push(await statement.run());
-      this.database.exec("COMMIT");
-      return results;
-    } catch (error) {
-      this.database.exec("ROLLBACK");
-      throw error;
-    }
-  }
-
-  close(): void {
-    this.database.close();
-  }
-}
-
-function repositoryDatabase() {
-  const client = new SQLiteD1Database();
-  const database = drizzle(client as unknown as D1Database, { schema });
-  return { client, database };
-}
-
 test("D1 customer repository satisfies save and lookup contract", async () => {
   const { client, database } = repositoryDatabase();
   const repository = new D1CustomerRepository(database);

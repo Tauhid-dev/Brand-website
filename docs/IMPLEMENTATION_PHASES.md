@@ -26,6 +26,8 @@ required to prove this foundation.
 
 ## Phase 3 — Pricing and commercial quotes
 
+Status: complete (23 August 2026).
+
 Versioned base prices, negotiated overrides, `Money`/date-range invariants,
 single pricing resolver, preview, immutable quote snapshots and public pricing
 provider. Concurrency and effective-range conflicts are tested.
