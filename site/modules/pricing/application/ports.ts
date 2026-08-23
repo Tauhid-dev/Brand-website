@@ -48,6 +48,7 @@ export interface DiscountResolutionPort {
   resolve(input: {
     customerId: string;
     planId: string;
+    subscriptionId?: string | null;
     effectiveAt: Date;
     charge: Money;
   }): Promise<{ total: Money; applications: ResolvedDiscount[] }>;

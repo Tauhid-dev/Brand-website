@@ -68,13 +68,16 @@ export class D1DiscountRepository implements DiscountRepository {
     try { await this.insertAssignment(assignment); } catch (error) { throw mapDiscountConflict(error); }
   }
 
-  async findEligibleCustomerDiscounts(customerId: string, planId: string, at: Date) {
+  async findEligibleCustomerDiscounts(customerId: string, planId: string, at: Date, subscriptionId?: string | null) {
     const rows = await this.db.select({ assignment: customerDiscounts })
       .from(customerDiscounts)
       .innerJoin(discounts, eq(discounts.id, customerDiscounts.discountId))
       .leftJoin(promotionCodes, eq(promotionCodes.id, customerDiscounts.promotionCodeId))
       .where(and(
         eq(customerDiscounts.customerId, customerId),
+        subscriptionId
+          ? or(isNull(customerDiscounts.subscriptionId), eq(customerDiscounts.subscriptionId, subscriptionId))
+          : isNull(customerDiscounts.subscriptionId),
         inArray(customerDiscounts.status, ["SCHEDULED", "ACTIVE"]),
         lte(customerDiscounts.effectiveFrom, at),
         or(isNull(customerDiscounts.effectiveTo), gt(customerDiscounts.effectiveTo, at)),
@@ -126,6 +129,7 @@ export class D1DiscountRepository implements DiscountRepository {
     const props = value.props;
     return this.db.insert(customerDiscounts).values({
       id: props.id.value, customerId: props.customerId.value, discountId: props.discountId.value,
+      subscriptionId: props.subscriptionId?.value ?? null,
       promotionCodeId: props.promotionCodeId?.value ?? null, source: props.source,
       effectiveFrom: props.effectiveRange.effectiveFrom, effectiveTo: props.effectiveRange.effectiveTo,
       status: props.status, appliedBy: props.appliedBy, reason: props.reason,
@@ -167,6 +171,7 @@ function mapPromotion(row: typeof promotionCodes.$inferSelect): PromotionCode {
 function mapCustomerDiscount(row: typeof customerDiscounts.$inferSelect): CustomerDiscount {
   return new CustomerDiscount({
     id: new EntityId(row.id), customerId: new EntityId(row.customerId), discountId: new EntityId(row.discountId),
+    subscriptionId: row.subscriptionId ? new EntityId(row.subscriptionId) : null,
     promotionCodeId: row.promotionCodeId ? new EntityId(row.promotionCodeId) : null,
     source: row.source as CustomerDiscountSource, effectiveRange: new EffectiveRange(row.effectiveFrom, row.effectiveTo),
     status: row.status as CustomerDiscountStatus, appliedBy: row.appliedBy, reason: row.reason,
@@ -176,6 +181,7 @@ function mapCustomerDiscount(row: typeof customerDiscounts.$inferSelect): Custom
 function mapDiscountConflict(error: unknown): DomainConflictError {
   const mappings = [
     "PROMOTION_CODE_INELIGIBLE", "PROMOTION_ASSIGNMENT_MISMATCH", "DISCOUNT_APPLICATION_MISMATCH",
+    "SUBSCRIPTION_DISCOUNT_CUSTOMER_MISMATCH", "SUBSCRIPTION_DISCOUNT_SCOPE_MISMATCH",
     "CUSTOMER_DISCOUNT_CONFLICT", "ONCE_DISCOUNT_ALREADY_USED",
   ];
   for (const code of mappings) if (errorChainIncludes(error, code)) return new DomainConflictError(code, "Discount redemption could not be completed.");

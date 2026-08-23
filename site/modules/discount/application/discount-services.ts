@@ -90,7 +90,7 @@ export class CreatePromotionCodeService {
 
 export class ApplyCustomerDiscountService {
   constructor(private readonly repository: DiscountRepository, private readonly references: PricingReferenceRepository, private readonly ids: IdGenerator, private readonly clock: Clock) {}
-  async execute(input: { customerId: string; discountId: string; effectiveFrom: Date; source: Exclude<CustomerDiscountSource, "PROMOTION_CODE">; appliedBy: string; reason: string }): Promise<CustomerDiscount> {
+  async execute(input: { customerId: string; discountId: string; subscriptionId?: string | null; effectiveFrom: Date; source: Exclude<CustomerDiscountSource, "PROMOTION_CODE">; appliedBy: string; reason: string }): Promise<CustomerDiscount> {
     if (!await this.references.customerExists(input.customerId)) throw new DomainConflictError("CUSTOMER_NOT_FOUND", "Customer does not exist.");
     const discount = await this.repository.findDiscountById(input.discountId);
     if (!discount) throw new DomainConflictError("DISCOUNT_NOT_FOUND", "Discount does not exist.");
@@ -98,6 +98,7 @@ export class ApplyCustomerDiscountService {
     const range = customerDiscountRange(discount, input.effectiveFrom);
     const assignment = new CustomerDiscount({
       id: new EntityId(this.ids.next()), customerId: new EntityId(input.customerId), discountId: discount.props.id,
+      subscriptionId: input.subscriptionId ? new EntityId(input.subscriptionId) : null,
       promotionCodeId: null, source: input.source, effectiveRange: range,
       status: customerDiscountStatus(range, now), appliedBy: input.appliedBy, reason: input.reason,
       createdAt: now, updatedAt: now,
@@ -136,12 +137,13 @@ export class RedeemPromotionCodeService {
     private readonly ids: IdGenerator,
     private readonly clock: Clock,
   ) {}
-  async execute(input: { code: string; customerId: string; planId: string; idempotencyKey: string; appliedBy: string; currency: string }): Promise<CustomerDiscount> {
+  async execute(input: { code: string; customerId: string; planId: string; subscriptionId?: string | null; idempotencyKey: string; appliedBy: string; currency: string }): Promise<CustomerDiscount> {
     const { promotion, discount } = await this.validation.execute(input);
     const now = this.clock.now();
     const range = customerDiscountRange(discount, now);
     const assignment = new CustomerDiscount({
       id: new EntityId(this.ids.next()), customerId: new EntityId(input.customerId), discountId: discount.props.id,
+      subscriptionId: input.subscriptionId ? new EntityId(input.subscriptionId) : null,
       promotionCodeId: promotion.props.id, source: "PROMOTION_CODE", effectiveRange: range, status: "ACTIVE",
       appliedBy: input.appliedBy, reason: `Promotion code ${promotion.props.code.value}`, createdAt: now, updatedAt: now,
     });
@@ -176,8 +178,8 @@ export class RecordDiscountApplicationService {
 
 export class DiscountPricingAdapter implements DiscountPricingPort {
   constructor(private readonly repository: DiscountRepository, private readonly calculator: DiscountCalculator = new DiscountCalculator()) {}
-  async resolve(input: { customerId: string; planId: string; effectiveAt: Date; charge: Money }) {
-    const eligible = await this.repository.findEligibleCustomerDiscounts(input.customerId, input.planId, input.effectiveAt);
+  async resolve(input: { customerId: string; planId: string; subscriptionId?: string | null; effectiveAt: Date; charge: Money }) {
+    const eligible = await this.repository.findEligibleCustomerDiscounts(input.customerId, input.planId, input.effectiveAt, input.subscriptionId);
     return this.calculator.apply(input.charge, eligible);
   }
 }

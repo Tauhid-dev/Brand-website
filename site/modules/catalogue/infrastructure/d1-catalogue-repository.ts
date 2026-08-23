@@ -2,10 +2,10 @@ import { eq } from "drizzle-orm";
 import type { AppDatabase } from "../../../db/index.ts";
 import { offerings, planFeatures, plans } from "../../../db/schema.ts";
 import { EntityId, StableCode } from "../../shared/domain/value-objects.ts";
-import type { CatalogueRepository } from "../application/ports.ts";
+import type { CatalogueRepository, PlanEntitlementSource } from "../application/ports.ts";
 import { Offering, Plan, type PlanFeature } from "../domain/catalogue.ts";
 
-export class D1CatalogueRepository implements CatalogueRepository {
+export class D1CatalogueRepository implements CatalogueRepository, PlanEntitlementSource {
   constructor(private readonly db: AppDatabase) {}
 
   async findOfferingByCode(code: string): Promise<Offering | null> {
@@ -71,5 +71,15 @@ export class D1CatalogueRepository implements CatalogueRepository {
         updatedAt: feature.updatedAt,
       },
     });
+  }
+
+  async findPlanEntitlementDefinitions(planId: string) {
+    return this.db.select({
+      offeringCode: offerings.code,
+      enabled: planFeatures.included,
+      limitValue: planFeatures.limitValue,
+      limitUnit: planFeatures.limitUnit,
+    }).from(planFeatures).innerJoin(offerings, eq(offerings.id, planFeatures.offeringId))
+      .where(eq(planFeatures.planId, planId));
   }
 }

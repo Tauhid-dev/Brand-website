@@ -1,8 +1,9 @@
 # Zuno Pixel commercial platform domain and database design
 
-Status: target design approved for phased implementation. Phases 2–4 now
-implement customer, catalogue, pricing, quote and promotion foundations; later
-table groups remain target design.
+Status: target design approved for phased implementation. Phases 2–5 now
+implement customer, catalogue, pricing, promotion, subscription, entitlement
+and provider-neutral billing foundations; later table groups remain target
+design.
 
 ## Architecture decision
 
@@ -102,6 +103,13 @@ Application services depend on repository, purchase-history, reference, clock
 and ID ports. Atomic redemption limits and immutable history are enforced again
 at the D1 boundary rather than being delegated to HTTP controllers.
 
+Phase 5 implements subscription creation/lifecycle transitions, explicit future
+contract-price versions, entitlement snapshots and provider-neutral billing
+records. Subscription creation atomically stores the subscription, its resolved
+commercial terms and plan-feature entitlements. Suspension/cancellation close
+entitlement ranges; resumption creates new ranges from the contracted snapshot.
+Billing-provider execution remains behind a port.
+
 ## Target table groups
 
 ### Identity and customers
@@ -168,6 +176,10 @@ key or unvalidated identifier is stored.
 
 ### Subscription, billing and service access
 
+Phase 5 implements all seven tables in this group. These records do not perform
+payments or send notifications; they provide durable provider-neutral state for
+later adapters.
+
 | Table | Purpose and important constraints/indexes |
 | --- | --- |
 | `subscriptions` | Explicit lifecycle; at most one current primary subscription per customer/product scope |
@@ -199,7 +211,8 @@ key or unvalidated identifier is stored.
 - Onboarding case 1—many tasks.
 - Plan many—many Offering through plan features; Plan 1—many immutable prices.
 - Customer and Plan scope overrides/quotes; Customer and optional Subscription
-  scope applied discounts.
+  scope applied discounts. Subscription scope is enforced against customer and
+  plan ownership at the database boundary.
 - Subscription 1—many price versions and entitlement snapshots.
 - Customer 1—many billing accounts/invoices; Invoice 1—many lines/reminders.
 - Customer 1—many agent links/provisioning jobs and operational queue items.
@@ -232,7 +245,8 @@ service notices, retries, provider IDs and audit correlation remain explicit.
 
 Phase 2 activates D1 and introduces the first forward-only migration for
 customer/catalogue foundations. Phase 3 adds pricing and Phase 4 adds promotion
-persistence through consecutive forward-only migrations. Subsequent phases add
-owned tables. Applied migrations are never renamed or rewritten. Every migration
+persistence. Phase 5 adds subscription and billing records and extends customer
+discounts with a validated subscription foreign key. Subsequent phases add owned
+tables. Applied migrations are never renamed or rewritten. Every migration
 receives clean-install and upgrade validation. Phase 1 intentionally has no
 migration because the target schema is not yet implemented.

@@ -105,7 +105,8 @@ export class PromotionCode {
 }
 
 export type CustomerDiscountProps = {
-  id: EntityId; customerId: EntityId; discountId: EntityId; promotionCodeId: EntityId | null;
+  id: EntityId; customerId: EntityId; discountId: EntityId; subscriptionId: EntityId | null;
+  promotionCodeId: EntityId | null;
   source: CustomerDiscountSource; effectiveRange: EffectiveRange; status: CustomerDiscountStatus;
   appliedBy: string; reason: string; createdAt: Date; updatedAt: Date;
 };

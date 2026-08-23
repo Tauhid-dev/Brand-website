@@ -295,6 +295,199 @@ export const priceQuotes = sqliteTable(
   ],
 );
 
+export const subscriptions = sqliteTable(
+  "subscriptions",
+  {
+    id: text("id").primaryKey(),
+    customerId: text("customer_id").notNull().references(() => customers.id, { onDelete: "restrict" }),
+    planId: text("plan_id").notNull().references(() => plans.id, { onDelete: "restrict" }),
+    status: text("status").notNull(),
+    billingInterval: text("billing_interval").notNull(),
+    currency: text("currency").notNull(),
+    startedAt: timestamp("started_at"),
+    currentPeriodStart: timestamp("current_period_start"),
+    currentPeriodEnd: timestamp("current_period_end"),
+    cancelAt: timestamp("cancel_at"),
+    cancelledAt: timestamp("cancelled_at"),
+    trialEndsAt: timestamp("trial_ends_at"),
+    externalBillingProvider: text("external_billing_provider"),
+    externalCustomerId: text("external_customer_id"),
+    externalSubscriptionId: text("external_subscription_id"),
+    version: integer("version").notNull().default(1),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("subscriptions_current_customer_uq").on(table.customerId)
+      .where(sql`${table.status} in ('PENDING', 'TRIAL', 'ACTIVE', 'PAST_DUE', 'SUSPENDED')`),
+    uniqueIndex("subscriptions_provider_reference_uq").on(table.externalBillingProvider, table.externalSubscriptionId),
+    index("subscriptions_customer_status_idx").on(table.customerId, table.status),
+    index("subscriptions_status_period_idx").on(table.status, table.currentPeriodEnd),
+    check("subscriptions_status_check", sql`${table.status} in ('PENDING', 'TRIAL', 'ACTIVE', 'PAST_DUE', 'SUSPENDED', 'CANCELLED', 'EXPIRED')`),
+    check("subscriptions_interval_check", sql`${table.billingInterval} in ('MONTHLY', 'ANNUAL')`),
+    check("subscriptions_currency_check", sql`length(${table.currency}) = 3 and ${table.currency} = upper(${table.currency})`),
+    check("subscriptions_period_check", sql`(${table.currentPeriodStart} is null and ${table.currentPeriodEnd} is null) or (${table.currentPeriodStart} is not null and ${table.currentPeriodEnd} > ${table.currentPeriodStart})`),
+    check("subscriptions_trial_check", sql`${table.status} <> 'TRIAL' or (${table.trialEndsAt} is not null and ${table.trialEndsAt} > ${table.createdAt})`),
+    check("subscriptions_cancellation_check", sql`(${table.status} = 'CANCELLED' and ${table.cancelledAt} is not null) or (${table.status} <> 'CANCELLED' and ${table.cancelledAt} is null)`),
+    check("subscriptions_external_check", sql`(${table.externalBillingProvider} is null and ${table.externalCustomerId} is null and ${table.externalSubscriptionId} is null) or (${table.externalBillingProvider} is not null and ${table.externalCustomerId} is not null)`),
+    check("subscriptions_version_check", sql`${table.version} > 0`),
+    check("subscriptions_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt}`),
+  ],
+);
+
+export const subscriptionPrices = sqliteTable(
+  "subscription_prices",
+  {
+    id: text("id").primaryKey(),
+    subscriptionId: text("subscription_id").notNull().references(() => subscriptions.id, { onDelete: "restrict" }),
+    baseAmountMinor: integer("base_amount_minor").notNull(),
+    effectiveAmountMinor: integer("effective_amount_minor").notNull(),
+    setupFeeMinor: integer("setup_fee_minor").notNull().default(0),
+    discountTotalMinor: integer("discount_total_minor").notNull().default(0),
+    currency: text("currency").notNull(),
+    taxBehaviour: text("tax_behaviour").notNull(),
+    effectiveFrom: timestamp("effective_from").notNull(),
+    effectiveTo: timestamp("effective_to"),
+    pricingSource: text("pricing_source").notNull(),
+    pricingSnapshot: text("pricing_snapshot_json", { mode: "json" }).$type<Record<string, unknown>>().notNull(),
+    createdAt: timestamp("created_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("subscription_prices_scope_start_uq").on(table.subscriptionId, table.effectiveFrom),
+    index("subscription_prices_effective_lookup_idx").on(table.subscriptionId, table.effectiveFrom, table.effectiveTo),
+    check("subscription_prices_amount_check", sql`${table.baseAmountMinor} >= 0 and ${table.effectiveAmountMinor} >= 0 and ${table.setupFeeMinor} >= 0 and ${table.discountTotalMinor} >= 0`),
+    check("subscription_prices_currency_check", sql`length(${table.currency}) = 3 and ${table.currency} = upper(${table.currency})`),
+    check("subscription_prices_tax_check", sql`${table.taxBehaviour} in ('EXCLUSIVE', 'INCLUSIVE', 'EXEMPT')`),
+    check("subscription_prices_source_check", sql`${table.pricingSource} in ('QUOTE', 'RESOLVED', 'MANUAL', 'RENEWAL')`),
+    check("subscription_prices_range_check", sql`${table.effectiveTo} is null or ${table.effectiveTo} > ${table.effectiveFrom}`),
+  ],
+);
+
+export const subscriptionEntitlements = sqliteTable(
+  "subscription_entitlements",
+  {
+    id: text("id").primaryKey(),
+    subscriptionId: text("subscription_id").notNull().references(() => subscriptions.id, { onDelete: "restrict" }),
+    offeringCode: text("offering_code").notNull(),
+    enabled: integer("enabled", { mode: "boolean" }).notNull(),
+    limitValue: integer("limit_value"),
+    limitUnit: text("limit_unit"),
+    effectiveFrom: timestamp("effective_from").notNull(),
+    effectiveTo: timestamp("effective_to"),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("subscription_entitlements_scope_start_uq").on(table.subscriptionId, table.offeringCode, table.effectiveFrom),
+    index("subscription_entitlements_effective_lookup_idx").on(table.subscriptionId, table.effectiveFrom, table.effectiveTo),
+    check("subscription_entitlements_code_check", sql`${table.offeringCode} = lower(${table.offeringCode})`),
+    check("subscription_entitlements_limit_check", sql`(${table.limitValue} is null and ${table.limitUnit} is null) or (${table.limitValue} >= 0 and ${table.limitUnit} is not null)`),
+    check("subscription_entitlements_range_check", sql`${table.effectiveTo} is null or ${table.effectiveTo} > ${table.effectiveFrom}`),
+    check("subscription_entitlements_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt}`),
+  ],
+);
+
+export const billingAccounts = sqliteTable(
+  "billing_accounts",
+  {
+    id: text("id").primaryKey(),
+    customerId: text("customer_id").notNull().references(() => customers.id, { onDelete: "restrict" }),
+    provider: text("provider").notNull(),
+    providerCustomerId: text("provider_customer_id").notNull(),
+    status: text("status").notNull(),
+    currency: text("currency").notNull(),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("billing_accounts_customer_provider_uq").on(table.customerId, table.provider),
+    uniqueIndex("billing_accounts_provider_reference_uq").on(table.provider, table.providerCustomerId),
+    index("billing_accounts_customer_status_idx").on(table.customerId, table.status),
+    check("billing_accounts_status_check", sql`${table.status} in ('PENDING', 'ACTIVE', 'SUSPENDED', 'CLOSED')`),
+    check("billing_accounts_currency_check", sql`length(${table.currency}) = 3 and ${table.currency} = upper(${table.currency})`),
+    check("billing_accounts_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt}`),
+  ],
+);
+
+export const invoices = sqliteTable(
+  "invoices",
+  {
+    id: text("id").primaryKey(),
+    customerId: text("customer_id").notNull().references(() => customers.id, { onDelete: "restrict" }),
+    subscriptionId: text("subscription_id").references(() => subscriptions.id, { onDelete: "restrict" }),
+    billingAccountId: text("billing_account_id").references(() => billingAccounts.id, { onDelete: "restrict" }),
+    invoiceNumber: text("invoice_number").notNull(),
+    providerInvoiceId: text("provider_invoice_id"),
+    status: text("status").notNull(),
+    currency: text("currency").notNull(),
+    subtotalMinor: integer("subtotal_minor").notNull(),
+    taxMinor: integer("tax_minor").notNull(),
+    totalMinor: integer("total_minor").notNull(),
+    amountDueMinor: integer("amount_due_minor").notNull(),
+    issuedAt: timestamp("issued_at"),
+    dueAt: timestamp("due_at"),
+    paidAt: timestamp("paid_at"),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("invoices_number_uq").on(table.invoiceNumber),
+    uniqueIndex("invoices_provider_reference_uq").on(table.providerInvoiceId),
+    index("invoices_customer_created_idx").on(table.customerId, table.createdAt),
+    index("invoices_subscription_created_idx").on(table.subscriptionId, table.createdAt),
+    index("invoices_status_due_idx").on(table.status, table.dueAt),
+    check("invoices_status_check", sql`${table.status} in ('DRAFT', 'OPEN', 'PAID', 'VOID', 'UNCOLLECTIBLE')`),
+    check("invoices_currency_check", sql`length(${table.currency}) = 3 and ${table.currency} = upper(${table.currency})`),
+    check("invoices_amount_check", sql`${table.subtotalMinor} >= 0 and ${table.taxMinor} >= 0 and ${table.totalMinor} = ${table.subtotalMinor} + ${table.taxMinor} and ${table.amountDueMinor} >= 0 and ${table.amountDueMinor} <= ${table.totalMinor}`),
+    check("invoices_dates_check", sql`(${table.dueAt} is null or ${table.issuedAt} is not null) and (${table.dueAt} is null or ${table.dueAt} >= ${table.issuedAt}) and ((${table.status} = 'PAID' and ${table.paidAt} is not null) or (${table.status} <> 'PAID' and ${table.paidAt} is null))`),
+    check("invoices_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt}`),
+  ],
+);
+
+export const invoiceLines = sqliteTable(
+  "invoice_lines",
+  {
+    id: text("id").primaryKey(),
+    invoiceId: text("invoice_id").notNull().references(() => invoices.id, { onDelete: "restrict" }),
+    description: text("description").notNull(),
+    quantity: integer("quantity").notNull(),
+    unitAmountMinor: integer("unit_amount_minor").notNull(),
+    subtotalMinor: integer("subtotal_minor").notNull(),
+    taxMinor: integer("tax_minor").notNull(),
+    totalMinor: integer("total_minor").notNull(),
+    createdAt: timestamp("created_at").notNull(),
+  },
+  (table) => [
+    index("invoice_lines_invoice_idx").on(table.invoiceId),
+    check("invoice_lines_amount_check", sql`${table.quantity} > 0 and ${table.unitAmountMinor} >= 0 and ${table.subtotalMinor} = ${table.quantity} * ${table.unitAmountMinor} and ${table.taxMinor} >= 0 and ${table.totalMinor} = ${table.subtotalMinor} + ${table.taxMinor}`),
+  ],
+);
+
+export const paymentReminders = sqliteTable(
+  "payment_reminders",
+  {
+    id: text("id").primaryKey(),
+    invoiceId: text("invoice_id").notNull().references(() => invoices.id, { onDelete: "restrict" }),
+    stage: text("stage").notNull(),
+    status: text("status").notNull(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    scheduledFor: timestamp("scheduled_for").notNull(),
+    sentAt: timestamp("sent_at"),
+    failureCode: text("failure_code"),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("payment_reminders_idempotency_uq").on(table.idempotencyKey),
+    uniqueIndex("payment_reminders_invoice_stage_uq").on(table.invoiceId, table.stage),
+    index("payment_reminders_status_schedule_idx").on(table.status, table.scheduledFor),
+    check("payment_reminders_stage_check", sql`${table.stage} in ('BEFORE_DUE', 'DUE', 'OVERDUE_1', 'OVERDUE_2', 'FINAL')`),
+    check("payment_reminders_status_check", sql`${table.status} in ('SCHEDULED', 'SENT', 'FAILED', 'CANCELLED')`),
+    check("payment_reminders_outcome_check", sql`(${table.status} = 'SENT' and ${table.sentAt} is not null and ${table.failureCode} is null) or (${table.status} = 'FAILED' and ${table.sentAt} is null and ${table.failureCode} is not null) or (${table.status} in ('SCHEDULED', 'CANCELLED') and ${table.sentAt} is null and ${table.failureCode} is null)`),
+    check("payment_reminders_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt}`),
+  ],
+);
+
 export const discounts = sqliteTable(
   "discounts",
   {
@@ -364,6 +557,7 @@ export const customerDiscounts = sqliteTable(
     id: text("id").primaryKey(),
     customerId: text("customer_id").notNull().references(() => customers.id, { onDelete: "restrict" }),
     discountId: text("discount_id").notNull().references(() => discounts.id, { onDelete: "restrict" }),
+    subscriptionId: text("subscription_id").references(() => subscriptions.id, { onDelete: "restrict" }),
     promotionCodeId: text("promotion_code_id").references(() => promotionCodes.id, { onDelete: "restrict" }),
     source: text("source").notNull(),
     effectiveFrom: timestamp("effective_from").notNull(),
@@ -377,6 +571,7 @@ export const customerDiscounts = sqliteTable(
   (table) => [
     index("customer_discounts_effective_lookup_idx").on(table.customerId, table.status, table.effectiveFrom, table.effectiveTo),
     index("customer_discounts_discount_idx").on(table.discountId),
+    index("customer_discounts_subscription_idx").on(table.subscriptionId),
     index("customer_discounts_promotion_idx").on(table.promotionCodeId),
     check("customer_discounts_source_check", sql`${table.source} in ('ADMIN', 'PROMOTION_CODE', 'SALES', 'MIGRATION', 'SYSTEM')`),
     check("customer_discounts_status_check", sql`${table.status} in ('SCHEDULED', 'ACTIVE', 'EXPIRED', 'REVOKED')`),
