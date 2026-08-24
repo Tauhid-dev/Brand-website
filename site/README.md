@@ -130,12 +130,12 @@ actions tied to the current ChatGPT user. Leave public content anonymous.
 ## Database workflow
 
 Migrations `drizzle/0000_uneven_violations.sql` through
-`drizzle/0010_stale_kang.sql` establish customer/catalogue, versioned
+`drizzle/0011_yummy_vin_gonzales.sql` establish customer/catalogue, versioned
 pricing/quotes, discounts/promotions, subscription/entitlement/billing,
 identity/RBAC/audit, onboarding/operations/notifications, API security and the
 billing-webhook/public-rate-limit hardening records, Phase 11 billing
-operations, and Phase 12 notification delivery history/recovery indexes in
-order. Apply them through the Sites/Cloudflare environment for the target
+operations, Phase 12 notification delivery history/recovery, and Phase 13 API
+cursor-query indexes in order. Apply them through the Sites/Cloudflare environment for the target
 stage. Do not edit an applied migration; change `db/schema.ts` and generate the
 next forward-only migration.
 

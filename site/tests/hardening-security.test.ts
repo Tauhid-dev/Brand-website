@@ -19,7 +19,7 @@ test("write routes reject cross-origin requests before executing handlers", asyn
 });
 
 test("JSON request bodies are bounded by actual bytes and map to 413", async () => {
-  const request = new Request("https://zunopixel.com.au/api/v1/public/promotion-codes/validate", { method: "POST", body: JSON.stringify({ value: "x".repeat(33_000) }) });
+  const request = new Request("https://zunopixel.com.au/api/v1/public/promotion-codes/validate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ value: "x".repeat(33_000) }) });
   const response = await apiRoute(request, async () => { await jsonObject(request); return Response.json({ ok: true }); });
   assert.equal(response.status, 413);
   assert.equal(((await response.json()) as { error: { code: string } }).error.code, "PAYLOAD_TOO_LARGE");
