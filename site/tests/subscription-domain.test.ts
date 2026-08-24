@@ -12,7 +12,8 @@ function subscription(status: ConstructorParameters<typeof Subscription>[0]["sta
   return new Subscription({
     id: id("1"), customerId: id("2"), planId: id("3"), status, billingInterval: "MONTHLY",
     currency: "AUD", startedAt: NOW, currentPeriodStart: NOW,
-    currentPeriodEnd: new Date("2026-09-23T00:00:00.000Z"), cancelAt: null,
+    currentPeriodEnd: new Date("2026-09-23T00:00:00.000Z"), gracePeriodEndsAt: null,
+    serviceExtendedUntil: null, cancelAt: status === "CANCEL_AT_PERIOD_END" ? new Date("2026-09-23T00:00:00.000Z") : null,
     cancelledAt: status === "CANCELLED" ? NOW : null, trialEndsAt: status === "TRIAL" ? new Date("2026-08-30T00:00:00.000Z") : null,
     externalBillingProvider: null, externalCustomerId: null, externalSubscriptionId: null,
     version: 1, createdAt: NOW, updatedAt: NOW,
@@ -29,6 +30,19 @@ test("subscription state machine permits controlled transitions and terminal sta
   assert.throws(() => cancelled.transition("ACTIVE", new Date("2026-08-26T00:00:00.000Z")), {
     code: "INVALID_SUBSCRIPTION_TRANSITION",
   });
+});
+
+test("subscription billing operations enforce scheduled cancellation, grace, and extension rules", () => {
+  const cancellation = subscription().scheduleCancellation(new Date("2026-08-24T00:00:00.000Z"));
+  assert.equal(cancellation.props.status, "CANCEL_AT_PERIOD_END");
+  assert.equal(cancellation.props.cancelAt?.toISOString(), "2026-09-23T00:00:00.000Z");
+  assert.equal(cancellation.transition("ACTIVE", new Date("2026-08-25T00:00:00.000Z")).props.cancelAt, null);
+
+  const pastDue = subscription().markPastDue(new Date("2026-08-31T00:00:00.000Z"), new Date("2026-08-24T00:00:00.000Z"));
+  assert.equal(pastDue.props.gracePeriodEndsAt?.toISOString(), "2026-08-31T00:00:00.000Z");
+  const extended = pastDue.extendService(new Date("2026-09-05T00:00:00.000Z"), new Date("2026-08-25T00:00:00.000Z"));
+  assert.equal(extended.props.serviceExtendedUntil?.toISOString(), "2026-09-05T00:00:00.000Z");
+  assert.throws(() => subscription().extendService(new Date("2026-09-05T00:00:00.000Z"), new Date("2026-08-25T00:00:00.000Z")), { code: "SERVICE_EXTENSION_NOT_ALLOWED" });
 });
 
 test("contracted prices and entitlements enforce currency, range, and limit invariants", () => {

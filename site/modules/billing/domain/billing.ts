@@ -1,11 +1,38 @@
 import { DomainConflictError, DomainValidationError } from "../../shared/domain/errors.ts";
-import { EntityId, requireText } from "../../shared/domain/value-objects.ts";
+import { EmailAddress, EntityId, optionalText, requireText } from "../../shared/domain/value-objects.ts";
 import { Money } from "../../pricing/domain/money.ts";
 
 export type BillingAccountStatus = "PENDING" | "ACTIVE" | "SUSPENDED" | "CLOSED";
 export type InvoiceStatus = "DRAFT" | "OPEN" | "PAID" | "VOID" | "UNCOLLECTIBLE";
 export type PaymentReminderStage = "BEFORE_DUE" | "DUE" | "OVERDUE_1" | "OVERDUE_2" | "FINAL";
 export type PaymentReminderStatus = "SCHEDULED" | "SENT" | "FAILED" | "CANCELLED";
+export type PaymentState = "NO_PAYMENT_DUE" | "PAYMENT_DUE" | "PAYMENT_OVERDUE" | "PAID" | "UNCOLLECTIBLE";
+
+export type CustomerBillingProfileProps = {
+  id: EntityId; customerId: EntityId; contactName: string; contactEmail: EmailAddress;
+  contactPhone: string | null; createdAt: Date; updatedAt: Date;
+};
+
+export class CustomerBillingProfile {
+  readonly props: Readonly<CustomerBillingProfileProps>;
+  constructor(input: CustomerBillingProfileProps) {
+    if (input.updatedAt < input.createdAt) throw new DomainValidationError("INVALID_TIMESTAMPS", "updatedAt cannot precede createdAt.");
+    this.props = Object.freeze({ ...input, contactName: requireText(input.contactName, "billing contact name", 200), contactPhone: optionalText(input.contactPhone, "billing contact phone", 50) });
+  }
+}
+
+export type BillingNoteProps = {
+  id: EntityId; customerId: EntityId; subscriptionId: EntityId | null; invoiceId: EntityId | null;
+  body: string; authorAdminUserId: EntityId; createdAt: Date;
+};
+
+export class BillingNote {
+  readonly props: Readonly<BillingNoteProps>;
+  constructor(input: BillingNoteProps) {
+    if (!Number.isFinite(input.createdAt.getTime())) throw new DomainValidationError("INVALID_DATE", "Billing note creation date is invalid.");
+    this.props = Object.freeze({ ...input, body: requireText(input.body, "billing note", 4_000) });
+  }
+}
 
 export type BillingAccountProps = {
   id: EntityId; customerId: EntityId; provider: string; providerCustomerId: string;
@@ -94,6 +121,13 @@ export class Invoice {
       updatedAt: at,
     });
   }
+}
+
+export function invoicePaymentState(invoice: Invoice, at: Date): PaymentState {
+  if (invoice.props.status === "PAID") return "PAID";
+  if (invoice.props.status === "UNCOLLECTIBLE") return "UNCOLLECTIBLE";
+  if (invoice.props.status !== "OPEN" || invoice.props.amountDue.amountMinor === 0) return "NO_PAYMENT_DUE";
+  return invoice.props.dueAt && invoice.props.dueAt < at ? "PAYMENT_OVERDUE" : "PAYMENT_DUE";
 }
 
 export type PaymentReminderProps = {

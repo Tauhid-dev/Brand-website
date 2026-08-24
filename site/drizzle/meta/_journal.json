@@ -57,6 +57,13 @@
       "when": 1787558382241,
       "tag": "0007_regular_shadowcat",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1787567170133,
+      "tag": "0008_bouncy_polaris",
+      "breakpoints": true
     }
   ]
 }

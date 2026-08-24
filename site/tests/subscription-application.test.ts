@@ -134,3 +134,26 @@ test("subscription-scoped discounts cannot leak into unrelated price resolution"
   assert.equal((await pricing.resolvePrice({ customerId: CUSTOMER_ID, planId: PLAN_ID, billingInterval: "MONTHLY", effectiveAt: NOW })).discountTotalMinor, 0);
   context.client.close();
 });
+
+test("Phase 11 scheduled cancellation, grace, and temporary service extension preserve entitlement history", async () => {
+  const context = await setup();
+  const created = await context.create.execute({ customerId: CUSTOMER_ID, planId: PLAN_ID, billingInterval: "MONTHLY", initialStatus: "ACTIVE", currentPeriodStart: NOW, currentPeriodEnd: new Date("2026-09-23T00:00:00.000Z") });
+  let now = new Date("2026-08-24T00:00:00.000Z");
+  const lifecycle = new SubscriptionLifecycleService(context.subscriptions, context.ids, { now: () => now }, NOOP_AUDIT);
+  const scheduled = await lifecycle.scheduleCancellation(created.props.id.value);
+  assert.equal(scheduled.props.status, "CANCEL_AT_PERIOD_END");
+  assert.equal(scheduled.props.cancelAt?.toISOString(), "2026-09-23T00:00:00.000Z");
+  now = new Date("2026-08-25T00:00:00.000Z");
+  await lifecycle.resume(created.props.id.value);
+  const pastDue = await lifecycle.markPastDue(created.props.id.value, new Date("2026-08-31T00:00:00.000Z"));
+  assert.equal(pastDue.props.gracePeriodEndsAt?.toISOString(), "2026-08-31T00:00:00.000Z");
+  now = new Date("2026-08-26T00:00:00.000Z");
+  await lifecycle.suspend(created.props.id.value);
+  const until = new Date("2026-08-28T00:00:00.000Z");
+  await lifecycle.extendService(created.props.id.value, until, "Allow time to resolve a disputed invoice");
+  assert.equal(await new EntitlementService(context.subscriptions, { now: () => now }).hasEntitlement(CUSTOMER_ID, "ai_receptionist"), true);
+  now = until;
+  assert.equal(await new EntitlementService(context.subscriptions, { now: () => now }).hasEntitlement(CUSTOMER_ID, "ai_receptionist"), false);
+  assert.equal(context.client.database.prepare("select count(*) as count from subscription_entitlements").get()?.count, 4);
+  context.client.close();
+});

@@ -47,7 +47,7 @@ export interface PortalReadRepository {
   getPricing(): Promise<{ prices: Array<Record<string, unknown>>; overrides: Array<Record<string, unknown>>; quotes: Array<Record<string, unknown>> }>;
   getDiscounts(): Promise<{ discounts: Array<Record<string, unknown>>; promotions: Array<Record<string, unknown>>; assignments: Array<Record<string, unknown>>; redemptions: Array<Record<string, unknown>> }>;
   getSubscriptions(): Promise<Array<Record<string, unknown>>>;
-  getBilling(): Promise<{ invoices: Array<Record<string, unknown>>; reminders: Array<Record<string, unknown>> }>;
+  getBilling(at?: Date): Promise<{ invoices: Array<Record<string, unknown>>; reminders: Array<Record<string, unknown>> }>;
   getAgents(): Promise<{ links: Array<Record<string, unknown>>; jobs: Array<Record<string, unknown>> }>;
   getAuditEvents(limit?: number): Promise<Array<Record<string, unknown>>>;
   getAdminUsers(): Promise<Array<Record<string, unknown>>>;

@@ -1,8 +1,9 @@
 # Zuno Pixel commercial platform domain and database design
 
-Status: target design implemented through Phase 10. Phases 2–9 implement the
+Status: target design implemented through Phase 11. Phases 2–9 implement the
 commercial domain, operational portal and versioned integration boundary;
-Phase 10 adds the configured billing-webhook adapter and launch hardening.
+Phase 10 adds the configured billing-webhook adapter and launch hardening, and
+Phase 11 completes provider-neutral billing operations and lifecycle controls.
 
 ## Architecture decision
 
@@ -53,13 +54,17 @@ suspended without losing onboarding evidence.
 
 ### Subscription and service access
 
-`PENDING → TRIAL → ACTIVE ↔ PAST_DUE → SUSPENDED → CANCELLED/EXPIRED`
+`PENDING → TRIAL → ACTIVE → PAST_DUE → SUSPENDED → ACTIVE`
+
+`ACTIVE → CANCEL_AT_PERIOD_END → CANCELLED`
 
 Only the subscription application service performs transitions. Suspension,
 cancellation or expiry closes/disables effective entitlements. It never deletes
 the customer, subscription, invoice, onboarding or agent-link record. Resumption
 creates/restores effective entitlements from the contracted snapshot through an
-audited transition.
+audited transition. Phase 11 adds explicit grace deadlines and temporary
+extensions; extensions are effective-dated entitlement grants and expire
+without changing or deleting the underlying commercial history.
 
 ### Billing lifecycle
 
@@ -68,6 +73,8 @@ Billing status is not customer status. Invoices use `DRAFT`, `OPEN`, `PAID`,
 subscription facts. Provider webhooks enter through a signature-authenticated,
 idempotent inbox. The adapter stores only a minimised normalized event and its
 payload hash, then invokes reusable invoice/subscription reconciliation services.
+The customer billing profile stores a billing contact independently from any
+provider account. Internal billing notes are append-only and administrator-only.
 
 ## Aggregate roots and application services
 
@@ -195,13 +202,15 @@ execution or sends notifications from an HTTP controller.
 
 | Table | Purpose and important constraints/indexes |
 | --- | --- |
-| `subscriptions` | Explicit lifecycle; at most one current primary subscription per customer/product scope |
+| `subscriptions` | Explicit lifecycle, grace/extension deadlines and period-end cancellation; at most one current primary subscription per customer/product scope |
 | `subscription_prices` | Immutable contracted commercial terms by effective range |
 | `subscription_entitlements` | Capability snapshots consumed by agent APIs; never inferred from plan name |
 | `billing_accounts` | Customer-to-provider billing identity; external IDs separate from customer aggregate |
 | `invoices` | Provider-neutral invoice header, integer totals and status; unique provider invoice reference |
 | `invoice_lines` | Immutable description, quantity and minor-unit totals |
 | `payment_reminders` | Scheduled/sent/failed reminder history; unique idempotency scope per invoice/stage |
+| `customer_billing_profiles` | One provider-independent billing contact per customer |
+| `billing_notes` | Append-only internal billing history linked to optional subscription/invoice context |
 | `billing_webhook_events` | Phase 10 provider/event deduplication, payload hash, minimised normalized data, retry state and terminal processing evidence |
 
 ### Operations, agents and cross-cutting infrastructure
@@ -233,7 +242,8 @@ Phase 7 implements the agent, queue and notification tables in this group.
   scope applied discounts. Subscription scope is enforced against customer and
   plan ownership at the database boundary.
 - Subscription 1—many price versions and entitlement snapshots.
-- Customer 1—many billing accounts/invoices; Invoice 1—many lines/reminders.
+- Customer 1—1 billing profile and 1—many billing accounts/invoices/billing
+  notes; Invoice 1—many lines/reminders and optional billing-note references.
 - Provider webhook identity is unique by `(provider, provider_event_id)` and
   references invoices/subscriptions only through repository-owned provider
   references; the webhook table deliberately stores no raw request body.
@@ -279,6 +289,9 @@ Phase 7 adds onboarding, integration, agent provisioning, operational queue and
 notification persistence. Phase 9 adds API idempotency, service credential and
 service rate-limit persistence. Phase 10 adds the billing webhook inbox and
 anonymous API rate limits, plus forward guards for provider reconciliation.
+Phase 11 adds billing profiles/notes and rebuilds `subscriptions` forward-only
+to add lifecycle deadlines and scheduled cancellation while preserving data and
+recreating every cross-table trigger that depends on the subscription table.
 Applied migrations are never renamed or rewritten. Every migration receives
 clean-install and upgrade validation. Phase 1 intentionally has no migration
 because the target schema was not yet implemented.

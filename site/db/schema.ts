@@ -310,6 +310,8 @@ export const subscriptions = sqliteTable(
     startedAt: timestamp("started_at"),
     currentPeriodStart: timestamp("current_period_start"),
     currentPeriodEnd: timestamp("current_period_end"),
+    gracePeriodEndsAt: timestamp("grace_period_ends_at"),
+    serviceExtendedUntil: timestamp("service_extended_until"),
     cancelAt: timestamp("cancel_at"),
     cancelledAt: timestamp("cancelled_at"),
     trialEndsAt: timestamp("trial_ends_at"),
@@ -322,19 +324,59 @@ export const subscriptions = sqliteTable(
   },
   (table) => [
     uniqueIndex("subscriptions_current_customer_uq").on(table.customerId)
-      .where(sql`${table.status} in ('PENDING', 'TRIAL', 'ACTIVE', 'PAST_DUE', 'SUSPENDED')`),
+      .where(sql`${table.status} in ('PENDING', 'TRIAL', 'ACTIVE', 'PAST_DUE', 'SUSPENDED', 'CANCEL_AT_PERIOD_END')`),
     uniqueIndex("subscriptions_provider_reference_uq").on(table.externalBillingProvider, table.externalSubscriptionId),
     index("subscriptions_customer_status_idx").on(table.customerId, table.status),
     index("subscriptions_status_period_idx").on(table.status, table.currentPeriodEnd),
-    check("subscriptions_status_check", sql`${table.status} in ('PENDING', 'TRIAL', 'ACTIVE', 'PAST_DUE', 'SUSPENDED', 'CANCELLED', 'EXPIRED')`),
+    check("subscriptions_status_check", sql`${table.status} in ('PENDING', 'TRIAL', 'ACTIVE', 'PAST_DUE', 'SUSPENDED', 'CANCEL_AT_PERIOD_END', 'CANCELLED', 'EXPIRED')`),
     check("subscriptions_interval_check", sql`${table.billingInterval} in ('MONTHLY', 'ANNUAL')`),
     check("subscriptions_currency_check", sql`length(${table.currency}) = 3 and ${table.currency} = upper(${table.currency})`),
     check("subscriptions_period_check", sql`(${table.currentPeriodStart} is null and ${table.currentPeriodEnd} is null) or (${table.currentPeriodStart} is not null and ${table.currentPeriodEnd} > ${table.currentPeriodStart})`),
     check("subscriptions_trial_check", sql`${table.status} <> 'TRIAL' or (${table.trialEndsAt} is not null and ${table.trialEndsAt} > ${table.createdAt})`),
-    check("subscriptions_cancellation_check", sql`(${table.status} = 'CANCELLED' and ${table.cancelledAt} is not null) or (${table.status} <> 'CANCELLED' and ${table.cancelledAt} is null)`),
+    check("subscriptions_cancellation_check", sql`(${table.status} = 'CANCEL_AT_PERIOD_END' and ${table.cancelAt} = ${table.currentPeriodEnd} and ${table.cancelledAt} is null) or (${table.status} = 'CANCELLED' and ${table.cancelledAt} is not null) or (${table.status} not in ('CANCEL_AT_PERIOD_END', 'CANCELLED') and ${table.cancelAt} is null and ${table.cancelledAt} is null)`),
+    check("subscriptions_grace_check", sql`${table.gracePeriodEndsAt} is null or ${table.gracePeriodEndsAt} > ${table.updatedAt}`),
+    check("subscriptions_extension_check", sql`${table.serviceExtendedUntil} is null or ${table.serviceExtendedUntil} > ${table.updatedAt}`),
     check("subscriptions_external_check", sql`(${table.externalBillingProvider} is null and ${table.externalCustomerId} is null and ${table.externalSubscriptionId} is null) or (${table.externalBillingProvider} is not null and ${table.externalCustomerId} is not null)`),
     check("subscriptions_version_check", sql`${table.version} > 0`),
     check("subscriptions_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt}`),
+  ],
+);
+
+export const customerBillingProfiles = sqliteTable(
+  "customer_billing_profiles",
+  {
+    id: text("id").primaryKey(),
+    customerId: text("customer_id").notNull().references(() => customers.id, { onDelete: "restrict" }),
+    contactName: text("contact_name").notNull(),
+    contactEmail: text("contact_email").notNull(),
+    contactPhone: text("contact_phone"),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("customer_billing_profiles_customer_uq").on(table.customerId),
+    check("customer_billing_profiles_name_check", sql`length(trim(${table.contactName})) between 1 and 200`),
+    check("customer_billing_profiles_email_check", sql`length(trim(${table.contactEmail})) between 3 and 320`),
+    check("customer_billing_profiles_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt}`),
+  ],
+);
+
+export const billingNotes = sqliteTable(
+  "billing_notes",
+  {
+    id: text("id").primaryKey(),
+    customerId: text("customer_id").notNull().references(() => customers.id, { onDelete: "restrict" }),
+    subscriptionId: text("subscription_id").references(() => subscriptions.id, { onDelete: "restrict" }),
+    invoiceId: text("invoice_id").references(() => invoices.id, { onDelete: "restrict" }),
+    body: text("body").notNull(),
+    authorAdminUserId: text("author_admin_user_id").notNull().references(() => adminUsers.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at").notNull(),
+  },
+  (table) => [
+    index("billing_notes_customer_created_idx").on(table.customerId, table.createdAt),
+    index("billing_notes_subscription_idx").on(table.subscriptionId),
+    index("billing_notes_invoice_idx").on(table.invoiceId),
+    check("billing_notes_body_check", sql`length(trim(${table.body})) between 1 and 4000`),
   ],
 );
 

@@ -32,7 +32,7 @@ export class D1SubscriptionRepository implements SubscriptionRepository {
   async findCurrentForCustomer(customerId: string): Promise<Subscription | null> {
     const [row] = await this.db.select().from(subscriptions).where(and(
       eq(subscriptions.customerId, customerId),
-      or(eq(subscriptions.status, "PENDING"), eq(subscriptions.status, "TRIAL"), eq(subscriptions.status, "ACTIVE"), eq(subscriptions.status, "PAST_DUE"), eq(subscriptions.status, "SUSPENDED")),
+      or(eq(subscriptions.status, "PENDING"), eq(subscriptions.status, "TRIAL"), eq(subscriptions.status, "ACTIVE"), eq(subscriptions.status, "PAST_DUE"), eq(subscriptions.status, "SUSPENDED"), eq(subscriptions.status, "CANCEL_AT_PERIOD_END")),
     )).limit(1);
     return row ? mapSubscription(row) : null;
   }
@@ -59,12 +59,17 @@ export class D1SubscriptionRepository implements SubscriptionRepository {
     const value = subscription.props;
     const statements: BatchItem[] = [this.db.update(subscriptions).set({
       status: value.status, startedAt: value.startedAt, currentPeriodStart: value.currentPeriodStart,
-      currentPeriodEnd: value.currentPeriodEnd, cancelAt: value.cancelAt, cancelledAt: value.cancelledAt,
+      currentPeriodEnd: value.currentPeriodEnd, gracePeriodEndsAt: value.gracePeriodEndsAt,
+      serviceExtendedUntil: value.serviceExtendedUntil, cancelAt: value.cancelAt, cancelledAt: value.cancelledAt,
       trialEndsAt: value.trialEndsAt, version: value.version, updatedAt: value.updatedAt,
     }).where(eq(subscriptions.id, value.id.value))];
     if (closeEntitlementsAt) statements.push(this.db.update(subscriptionEntitlements).set({
       effectiveTo: closeEntitlementsAt, updatedAt: closeEntitlementsAt,
-    }).where(and(eq(subscriptionEntitlements.subscriptionId, value.id.value), isNull(subscriptionEntitlements.effectiveTo))));
+    }).where(and(
+      eq(subscriptionEntitlements.subscriptionId, value.id.value),
+      lte(subscriptionEntitlements.effectiveFrom, closeEntitlementsAt),
+      or(isNull(subscriptionEntitlements.effectiveTo), gt(subscriptionEntitlements.effectiveTo, closeEntitlementsAt)),
+    )));
     statements.push(...restoredEntitlements.map((entitlement) => this.insertEntitlement(entitlement)));
     try { await this.db.batch(statements as [BatchItem, ...BatchItem[]]); }
     catch (error) { throw mapSubscriptionConflict(error); }
@@ -124,7 +129,8 @@ export class D1SubscriptionRepository implements SubscriptionRepository {
       id: props.id.value, customerId: props.customerId.value, planId: props.planId.value,
       status: props.status, billingInterval: props.billingInterval, currency: props.currency,
       startedAt: props.startedAt, currentPeriodStart: props.currentPeriodStart,
-      currentPeriodEnd: props.currentPeriodEnd, cancelAt: props.cancelAt, cancelledAt: props.cancelledAt,
+      currentPeriodEnd: props.currentPeriodEnd, gracePeriodEndsAt: props.gracePeriodEndsAt,
+      serviceExtendedUntil: props.serviceExtendedUntil, cancelAt: props.cancelAt, cancelledAt: props.cancelledAt,
       trialEndsAt: props.trialEndsAt, externalBillingProvider: props.externalBillingProvider,
       externalCustomerId: props.externalCustomerId, externalSubscriptionId: props.externalSubscriptionId,
       version: props.version, createdAt: props.createdAt, updatedAt: props.updatedAt,
@@ -159,7 +165,8 @@ function mapSubscription(row: typeof subscriptions.$inferSelect): Subscription {
     id: new EntityId(row.id), customerId: new EntityId(row.customerId), planId: new EntityId(row.planId),
     status: row.status as SubscriptionStatus, billingInterval: row.billingInterval as BillingInterval,
     currency: row.currency, startedAt: row.startedAt, currentPeriodStart: row.currentPeriodStart,
-    currentPeriodEnd: row.currentPeriodEnd, cancelAt: row.cancelAt, cancelledAt: row.cancelledAt,
+    currentPeriodEnd: row.currentPeriodEnd, gracePeriodEndsAt: row.gracePeriodEndsAt,
+    serviceExtendedUntil: row.serviceExtendedUntil, cancelAt: row.cancelAt, cancelledAt: row.cancelledAt,
     trialEndsAt: row.trialEndsAt, externalBillingProvider: row.externalBillingProvider,
     externalCustomerId: row.externalCustomerId, externalSubscriptionId: row.externalSubscriptionId,
     version: row.version, createdAt: row.createdAt, updatedAt: row.updatedAt,
