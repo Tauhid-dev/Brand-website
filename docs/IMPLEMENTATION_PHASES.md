@@ -81,9 +81,15 @@ does not introduce the Phase 9 `/api/v1` boundary.
 
 ## Phase 9 — Versioned REST and agent boundary
 
-Purpose-specific `/api/v1` public, customer, admin and service APIs; cursor
-pagination, idempotency, OpenAPI, scoped service credentials and agent bootstrap
-DTOs. No direct agent database access.
+Status: complete (24 August 2026).
+
+Purpose-specific `/api/v1` public, customer, admin and service APIs; opaque
+cursor pagination; durable scoped idempotency; OpenAPI 3.1; dispatch-owned
+customer/admin authentication; rotatable, expiring and revocable hashed service
+credentials; durable service rate limits and request audit records; and agent
+customer, subscription, entitlement, bootstrap and provisioning DTOs. REST
+controllers call reusable application services and the future agent platform has
+no direct database dependency.
 
 ## Phase 10 — Billing adapter and hardening
 

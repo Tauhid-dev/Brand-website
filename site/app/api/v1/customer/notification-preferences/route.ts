@@ -1,0 +1,8 @@
+import { NotificationPreferenceService } from "@/modules/notification/application/notification-services";
+import type { NotificationChannel, NotificationPreferenceStatus } from "@/modules/notification/domain/notification";
+import { D1NotificationRepository } from "@/modules/notification/infrastructure/d1-notification-repository";
+import { DomainValidationError } from "@/modules/shared/domain/errors";
+import { apiRoute, dataResponse, jsonObject, requiredString } from "../../api-http";
+import { authenticateCustomer, createApiRuntime } from "../../api-runtime";
+
+export async function PATCH(request: Request) { return apiRoute(request, async ({ requestId }) => { const runtime = await createApiRuntime(request, requestId); const { principal, audit } = await authenticateCustomer(runtime); const body = await jsonObject(request); const channel = requiredString(body, "channel", 20) as NotificationChannel; const status = requiredString(body, "status", 20) as NotificationPreferenceStatus; if (!["EMAIL", "SMS", "IN_APP"].includes(channel)) throw new DomainValidationError("INVALID_CHANNEL", "Notification channel is invalid."); if (!["OPTED_IN", "OPTED_OUT"].includes(status)) throw new DomainValidationError("INVALID_PREFERENCE", "Notification preference is invalid."); await new NotificationPreferenceService(new D1NotificationRepository(runtime.db), runtime.ids, runtime.clock, audit).set({ customerId: principal.customerId, code: requiredString(body, "code", 100), channel, status, updatedBy: principal.identityId }); return dataResponse({ updated: true }); }); }

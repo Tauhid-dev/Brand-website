@@ -1,0 +1,14 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { apiRoute, decodeCursor, encodeCursor } from "../app/api/v1/api-http.ts";
+import { openApiDocument } from "../app/api/v1/openapi-document.ts";
+import { mapApplicationError } from "../modules/shared/presentation/api-primitives.ts";
+import { AuthenticationRequiredError, AuthorizationDeniedError, DomainConflictError, DomainValidationError, RateLimitExceededError } from "../modules/shared/domain/errors.ts";
+
+test("opaque cursors round-trip and reject invalid client input", () => { const position = { createdAt: new Date("2026-08-24T00:00:00.000Z"), id: "customer-1" }; assert.deepEqual(decodeCursor(encodeCursor(position)), position); assert.throws(() => decodeCursor("not-a-cursor"), { code: "INVALID_CURSOR" }); });
+
+test("OpenAPI inventories all four purpose-specific surfaces and security schemes", () => { assert.equal(openApiDocument.openapi, "3.1.0"); const paths = Object.keys(openApiDocument.paths); for (const prefix of ["/public/", "/customer/", "/admin/", "/integrations/agent/"]) assert.equal(paths.some((path) => path.startsWith(prefix)), true); assert.equal(openApiDocument.components.securitySchemes.ServiceBearer.scheme, "bearer"); assert.ok(openApiDocument.paths["/admin/customers"]); assert.ok(openApiDocument.paths["/integrations/agent/customers/{customerId}/bootstrap"]); });
+
+test("REST problem mapping includes request IDs and 429 responses", () => { assert.deepEqual(mapApplicationError(new RateLimitExceededError(), "request-1"), { status: 429, body: { error: { code: "RATE_LIMIT_EXCEEDED", message: "Too many requests.", requestId: "request-1" } } }); });
+
+test("REST boundary maps validation, authentication, authorization, missing, conflict and internal failures without stack traces", async () => { const request = new Request("https://example.invalid/api/v1/test"); const cases: Array<[Error, number]> = [[new DomainValidationError("INVALID_INPUT", "Invalid input."), 400], [new AuthenticationRequiredError(), 401], [new AuthorizationDeniedError(), 403], [new DomainConflictError("THING_NOT_FOUND", "Missing."), 404], [new DomainConflictError("THING_CONFLICT", "Conflict."), 409], [new Error("database password secret"), 500]]; for (const [error, status] of cases) { const response = await apiRoute(request, async () => { throw error; }); assert.equal(response.status, status); const json = JSON.stringify(await response.json()); assert.match(json, /requestId/); if (status === 500) { assert.equal(json.includes("database password secret"), false); assert.equal(json.includes("stack"), false); } } });

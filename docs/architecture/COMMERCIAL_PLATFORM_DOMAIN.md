@@ -1,9 +1,8 @@
 # Zuno Pixel commercial platform domain and database design
 
-Status: target design approved for phased implementation. Phases 2–6 now
-implement customer, catalogue, pricing, promotion, subscription, entitlement
-provider-neutral billing, external identity, RBAC and immutable audit
-foundations; later table groups remain target design.
+Status: target design approved for phased implementation. Phases 2–9 implement
+the commercial domain, operational portal and versioned integration boundary;
+the billing-provider adapter and launch hardening remain later work.
 
 ## Architecture decision
 
@@ -217,7 +216,9 @@ Phase 7 implements the agent, queue and notification tables in this group.
 | `notification_preferences` | Customer channel consent/preference, separate from required service notices |
 | `admin_users`, `roles`, `permissions`, `admin_user_roles`, `role_permissions` | Phase 6 provider identities and server-side RBAC; initial system vocabulary is migration-seeded and no passwords are stored |
 | `audit_events` | Phase 6 append-only before/after commercial/security history; database triggers reject update/delete and application snapshots redact secret-bearing keys |
-| `idempotency_keys` | Scoped request hash and stored outcome with expiry; unique `(scope, key)` |
+| `idempotency_keys` | Phase 9 scoped request hash and stored non-secret outcome with expiry; unique `(scope, key)` and immutable completed outcomes |
+| `service_credentials` | Phase 9 separately issued service identity with SHA-256 secret hash, scopes, expiry, rotation lineage and terminal revocation; raw tokens are never persisted |
+| `service_rate_limits` | Phase 9 durable per-credential fixed-window counters for the service boundary |
 
 ## Relationship summary
 
@@ -264,7 +265,8 @@ persistence. Phase 5 adds subscription and billing records and extends customer
 discounts with a validated subscription foreign key. Phase 6 adds admin/RBAC/
 audit persistence and links a consumed invitation to one customer identity.
 Phase 7 adds onboarding, integration, agent provisioning, operational queue and
-notification persistence. Subsequent phases add their owned tables. Applied
+notification persistence. Phase 9 adds API idempotency, service credential and
+service rate-limit persistence. Subsequent phases add only their owned tables. Applied
 migrations are never renamed or rewritten. Every migration receives
 clean-install and upgrade validation. Phase 1 intentionally has no migration
 because the target schema is not yet implemented.

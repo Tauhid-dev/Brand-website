@@ -28,6 +28,19 @@ This starter does not use `wrangler.jsonc`.
 - `drizzle/` contains forward-only generated migrations
 - `db/seeds/development.ts` exports opt-in demo fixtures and never auto-runs
 
+## Versioned API
+
+Phase 9 exposes purpose-specific JSON contracts under `/api/v1`:
+
+- public plan and promotion validation endpoints;
+- signed-in customer account, entitlement and preference endpoints;
+- server-authorized administration endpoints for commercial records; and
+- scoped service-to-service agent integration endpoints.
+
+The machine-readable OpenAPI 3.1 contract is available at
+`/api/v1/openapi.json`. See `docs/api/REST_API_V1.md` for the endpoint inventory,
+authentication, pagination, idempotency and error conventions.
+
 ## Identity, sessions and authorization
 
 OpenAI workspace sites can read the current user's email from

@@ -36,3 +36,12 @@ export class AuthorizationDeniedError extends Error {
     this.code = code;
   }
 }
+
+export class RateLimitExceededError extends Error {
+  readonly code = "RATE_LIMIT_EXCEEDED";
+
+  constructor(message = "Too many requests.") {
+    super(message);
+    this.name = "RateLimitExceededError";
+  }
+}
