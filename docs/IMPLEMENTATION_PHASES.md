@@ -137,11 +137,17 @@ deliveries and all validation gates pass.
 
 ## Phase 13 — REST API production hardening
 
-Status: not started.
+Status: complete (24 August 2026).
 
-Harden the production REST surface with complete schemas, controlled filtering,
-pagination, idempotency coverage, authorization matrices, error contracts,
-compatibility policy and production-grade API tests.
+Acceptance criteria: public, customer, administrator and integration route
+families have exact authentication/authorization contracts; write bodies and
+collection queries reject unknown input; JSON media type, bounded bodies,
+request IDs and standard errors are consistent; customer and administrator
+actors have durable rate limits; commercial writes use actor-scoped
+idempotency; customers, subscriptions, invoices, discounts, promotion codes,
+notifications and audit events use field-minimised DTOs, controlled filters and
+stable opaque cursor sorting; OpenAPI uses explicit schemas; v1 compatibility
+rules and production-grade API/migration/authorization tests are complete.
 
 ## Phase 14 — Agent platform integration
 

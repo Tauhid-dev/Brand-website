@@ -50,6 +50,8 @@ errors 500.
 | `GET/POST /admin/subscriptions` | ChatGPT SIWC admin | `SUBSCRIPTION_READ` / `SUBSCRIPTION_WRITE` |
 | `GET/PATCH /admin/subscriptions/{subscriptionId}` | ChatGPT SIWC admin | `SUBSCRIPTION_READ` / `SUBSCRIPTION_WRITE` |
 | `POST /admin/subscriptions/{subscriptionId}/operations` | ChatGPT SIWC admin | `SUBSCRIPTION_WRITE` |
+| `GET /admin/invoices` | ChatGPT SIWC admin | `BILLING_READ` |
+| `GET /admin/notifications` | ChatGPT SIWC admin | `OPERATIONS_READ` |
 | `GET /admin/audit-events` | ChatGPT SIWC admin | `AUDIT_READ` |
 | `POST /admin/service-credentials` | ChatGPT SIWC admin | `ADMIN_USER_MANAGE` |
 | `POST /admin/service-credentials/{id}/rotate` | ChatGPT SIWC admin | `ADMIN_USER_MANAGE` |
@@ -82,9 +84,11 @@ policy.
 
 ## Cursor pagination
 
-Customers, subscriptions, discounts, promotion codes and audit events accept
-`limit` from 1–100 and an opaque `cursor`. Ordering is stable by creation time
-and UUID. Clients must treat cursors as opaque:
+Customers, subscriptions, invoices, discounts, promotion codes, notifications
+and audit events accept `limit` from 1–100, an opaque `cursor` and controlled
+`sort`. The only sort values are `-createdAt` (default) and `createdAt`.
+Ordering is stable by creation time and UUID; a cursor is bound to its sort
+direction. Clients must treat cursors as opaque:
 
 ```json
 {
@@ -97,14 +101,15 @@ and UUID. Clients must treat cursors as opaque:
 ```
 
 Supported controlled filters include customer/subscription status, customer
-search, subscription customer/plan, active discount/promotion state and audit
-action/entity type.
+search, subscription customer/plan, invoice status/customer/subscription,
+active discount/promotion state, notification status/channel/customer/code and
+audit action/entity type. Unknown filters and sort fields are rejected.
 
 ## Idempotent writes
 
 Commercial POST/PATCH/DELETE operations require an `Idempotency-Key` of 8–255
 characters. The server stores a canonical request hash under an
-operation-specific scope. An identical retry returns the original status/body
+operation- and actor-specific scope. An identical retry returns the original status/body
 with `x-idempotent-replay: true`; a changed payload returns 409, and a concurrent
 request returns 409 without executing the use case twice. Outcomes expire after
 24 hours.
@@ -112,6 +117,10 @@ request returns 409 without executing the use case twice. Outcomes expire after
 Credential issuance/rotation deliberately does not use the response store:
 the raw token is returned once and never persisted. Price preview is also
 non-mutating and bypasses idempotency persistence.
+
+Customer notification-preference writes and agent-provisioning requests use
+the same durable boundary. Billing webhook event IDs provide the equivalent
+provider-owned deduplication key.
 
 ## Service authentication
 
@@ -143,7 +152,8 @@ claim a successful payment.
 
 ## HTTP hardening and public limits
 
-JSON requests default to a 32 KiB body limit; the billing webhook has its own
+JSON requests require `Content-Type: application/json` and default to a 32 KiB
+body limit; unsupported fields are rejected rather than silently ignored. The billing webhook has its own
 256 KiB raw-body limit. Write requests that carry an `Origin` header must match
 the request origin. Browser responses add a restrictive content security policy,
 clickjacking, MIME-sniffing, referrer, permissions and cross-origin-opener
@@ -152,9 +162,20 @@ permissive CORS policy.
 
 Anonymous fixed-window limits are durable and persist only a SHA-256 subject
 hash: plan reads use 120 requests/minute, promotion validation 30/minute and the
-growth-audit/contact submission 5/minute. Service endpoints retain their
-credential-scoped limits described above. Operators should prune expired rate
+growth-audit/contact submission 5/minute. Signed-in customer and administrator
+API families use hashed actor IDs with limits of 300 and 600 requests/minute;
+service endpoints retain their credential-scoped limits described above. Operators should prune expired rate
 windows according to the launch runbook.
+
+## Compatibility policy
+
+`/api/v1` is a stable major contract. Additive endpoints, optional fields and
+new enum values may be introduced with documentation. Existing required fields,
+field meaning, authentication requirements and successful status codes are not
+changed incompatibly inside v1. Removing or renaming a field, narrowing accepted
+input, changing ownership semantics or changing a route's security model
+requires a new major namespace and a documented migration window. Clients must
+ignore response fields they do not understand and must not decode cursors.
 
 ## Examples
 

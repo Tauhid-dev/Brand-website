@@ -1,11 +1,14 @@
 # Zuno Pixel commercial platform domain and database design
 
-Status: target design implemented through Phase 12. Phases 2–9 implement the
+Status: target design implemented through Phase 13. Phases 2–9 implement the
 commercial domain, operational portal and versioned integration boundary;
 Phase 10 adds the configured billing-webhook adapter and launch hardening, and
 Phase 11 completes provider-neutral billing operations and lifecycle controls.
 Phase 12 completes semantic notification orchestration, recoverable delivery
-processing and full operational projection reconciliation.
+processing and full operational projection reconciliation. Phase 13 hardens the
+REST boundary with explicit field-minimised projections, exact route/permission
+contracts, bounded and validated input, actor-scoped idempotency and indexed
+cursor collection reads. No HTTP controller owns commercial policy.
 
 ## Architecture decision
 

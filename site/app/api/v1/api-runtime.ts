@@ -33,6 +33,7 @@ export function actorAudit(runtime: ApiRuntime, actor: RequestActor) { return au
 export async function authenticateCustomer(runtime: ApiRuntime): Promise<{ principal: CustomerPrincipal; audit: AuditRecorder }> {
   const identity = await externalIdentity();
   const principal = await new CustomerAuthenticationService(new D1CustomerIdentityRepository(runtime.db)).execute(identity);
+  await enforcePrincipalRateLimit(runtime, "customer", principal.customerId, 300);
   return { principal, audit: actorAudit(runtime, { type: "CUSTOMER", id: principal.customerId }) };
 }
 
@@ -40,6 +41,7 @@ export async function authenticateAdmin(runtime: ApiRuntime, permission: Permiss
   const identity = await externalIdentity();
   const principal = await new AdminAuthenticationService(new D1AdminAccessRepository(runtime.db), runtime.clock, runtime.anonymousAudit).execute(identity);
   new AdminAuthorizationGuard().requirePermission(principal, permission);
+  await enforcePrincipalRateLimit(runtime, "admin", principal.adminUserId, 600);
   return { principal, audit: actorAudit(runtime, { type: "ADMIN", id: principal.adminUserId }) };
 }
 
@@ -53,6 +55,10 @@ export async function authenticateService(runtime: ApiRuntime, request: Request,
 export async function enforcePublicRateLimit(runtime: ApiRuntime, request: Request, scope: string, limit = 60) {
   const subject = request.headers.get("cf-connecting-ip")?.trim() || `local:${request.headers.get("user-agent")?.slice(0, 160) || "anonymous"}`;
   await new RequestRateLimitService(runtime.security, runtime.clock).consume(scope, await sha256Hex(subject), limit);
+}
+
+async function enforcePrincipalRateLimit(runtime: ApiRuntime, actorType: "customer" | "admin", actorId: string, limit: number) {
+  await new RequestRateLimitService(runtime.security, runtime.clock).consume(`${actorType}:api`, await sha256Hex(actorId), limit);
 }
 
 function auditFor(db: AppDatabase, ids: CryptoUuidGenerator, clock: SystemClock, metadata: Omit<RequestContext, "actor">, actor: RequestActor) { return new AuditService(new D1AuditEventRepository(db), ids, clock, { ...metadata, actor }); }

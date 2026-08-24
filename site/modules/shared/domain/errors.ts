@@ -64,3 +64,12 @@ export class PayloadTooLargeError extends Error {
     this.name = "PayloadTooLargeError";
   }
 }
+
+export class UnsupportedMediaTypeError extends Error {
+  readonly code = "UNSUPPORTED_MEDIA_TYPE";
+
+  constructor(message = "Content-Type must be application/json.") {
+    super(message);
+    this.name = "UnsupportedMediaTypeError";
+  }
+}

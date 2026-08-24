@@ -15,6 +15,7 @@ const MIGRATIONS = [
   new URL("../../drizzle/0008_bouncy_polaris.sql", import.meta.url),
   new URL("../../drizzle/0009_numerous_meltdown.sql", import.meta.url),
   new URL("../../drizzle/0010_stale_kang.sql", import.meta.url),
+  new URL("../../drizzle/0011_yummy_vin_gonzales.sql", import.meta.url),
 ];
 
 class SQLiteD1PreparedStatement {
