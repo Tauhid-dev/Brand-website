@@ -1075,3 +1075,54 @@ export const serviceRateLimits = sqliteTable(
     check("service_rate_limits_timestamps_check", sql`${table.updatedAt} >= ${table.windowStartedAt}`),
   ],
 );
+
+export const billingWebhookEvents = sqliteTable(
+  "billing_webhook_events",
+  {
+    id: text("id").primaryKey(),
+    provider: text("provider").notNull(),
+    providerEventId: text("provider_event_id").notNull(),
+    eventType: text("event_type").notNull(),
+    payloadHash: text("payload_hash").notNull(),
+    normalizedPayload: text("normalized_payload_json", { mode: "json" }).$type<unknown>().notNull(),
+    status: text("status").notNull().default("PROCESSING"),
+    attemptCount: integer("attempt_count").notNull().default(1),
+    maxAttempts: integer("max_attempts").notNull().default(5),
+    occurredAt: timestamp("occurred_at").notNull(),
+    receivedAt: timestamp("received_at").notNull(),
+    processingStartedAt: timestamp("processing_started_at").notNull(),
+    processedAt: timestamp("processed_at"),
+    nextAttemptAt: timestamp("next_attempt_at"),
+    failureCode: text("failure_code"),
+    requestId: text("request_id").notNull(),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("billing_webhook_events_provider_event_uq").on(table.provider, table.providerEventId),
+    index("billing_webhook_events_ready_idx").on(table.status, table.nextAttemptAt),
+    index("billing_webhook_events_provider_occurred_idx").on(table.provider, table.occurredAt),
+    check("billing_webhook_events_status_check", sql`${table.status} in ('PROCESSING', 'PROCESSED', 'IGNORED', 'FAILED')`),
+    check("billing_webhook_events_attempt_check", sql`${table.attemptCount} > 0 and ${table.maxAttempts} > 0 and ${table.attemptCount} <= ${table.maxAttempts}`),
+    check("billing_webhook_events_outcome_check", sql`(${table.status} = 'PROCESSING' and ${table.processedAt} is null and ${table.nextAttemptAt} is null and ${table.failureCode} is null) or (${table.status} in ('PROCESSED', 'IGNORED') and ${table.processedAt} is not null and ${table.nextAttemptAt} is null and ${table.failureCode} is null) or (${table.status} = 'FAILED' and ${table.processedAt} is null and ${table.failureCode} is not null)`),
+    check("billing_webhook_events_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt} and ${table.processingStartedAt} >= ${table.receivedAt}`),
+  ],
+);
+
+export const apiRateLimits = sqliteTable(
+  "api_rate_limits",
+  {
+    scope: text("scope").notNull(),
+    subjectHash: text("subject_hash").notNull(),
+    windowStartedAt: timestamp("window_started_at").notNull(),
+    requestCount: integer("request_count").notNull().default(1),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.scope, table.subjectHash, table.windowStartedAt] }),
+    index("api_rate_limits_window_idx").on(table.windowStartedAt),
+    check("api_rate_limits_count_check", sql`${table.requestCount} > 0`),
+    check("api_rate_limits_subject_hash_check", sql`length(${table.subjectHash}) = 64`),
+    check("api_rate_limits_timestamps_check", sql`${table.updatedAt} >= ${table.windowStartedAt}`),
+  ],
+);

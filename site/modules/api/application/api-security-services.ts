@@ -5,6 +5,7 @@ import type { AdminPrincipal } from "../../identity/domain/access-control.ts";
 import type { Clock, IdGenerator } from "../../shared/application/ports.ts";
 import { AuthenticationRequiredError, AuthorizationDeniedError, DomainConflictError, DomainValidationError, RateLimitExceededError } from "../../shared/domain/errors.ts";
 import { EntityId, requireText } from "../../shared/domain/value-objects.ts";
+import { constantTimeEqual, sha256Hex } from "../../shared/infrastructure/web-crypto.ts";
 import type { ApiSecurityRepository } from "./ports.ts";
 import { SERVICE_SCOPES, ServiceCredential, type IdempotencyRecord, type ServicePrincipal, type ServiceScope } from "../domain/api-security.ts";
 
@@ -45,7 +46,7 @@ export class ManageServiceCredentialService {
     const id = new EntityId(this.ids.next());
     const secret = randomSecret();
     const now = this.clock.now();
-    const credential = new ServiceCredential({ id, name: input.name, secretHash: await sha256(secret), scopes: input.scopes, status: "ACTIVE", expiresAt: input.expiresAt, rotatedFromId, createdByAdminUserId: new EntityId(principal.adminUserId), lastUsedAt: null, revokedAt: null, revokedByAdminUserId: null, createdAt: now, updatedAt: now });
+    const credential = new ServiceCredential({ id, name: input.name, secretHash: await sha256Hex(secret), scopes: input.scopes, status: "ACTIVE", expiresAt: input.expiresAt, rotatedFromId, createdByAdminUserId: new EntityId(principal.adminUserId), lastUsedAt: null, revokedAt: null, revokedByAdminUserId: null, createdAt: now, updatedAt: now });
     return { credential, rawToken: `${id.value}.${secret}` };
   }
 }
@@ -57,7 +58,7 @@ export class ServiceAuthenticationService {
     const match = authorization?.match(/^Bearer ([^.\s]+)\.([^\s]+)$/);
     if (!match) return this.fail("MISSING_BEARER_TOKEN");
     const credential = await this.repository.findCredential(match[1]);
-    if (!credential || !constantTimeEqual(credential.props.secretHash, await sha256(match[2]))) return this.fail("INVALID_CREDENTIAL");
+    if (!credential || !constantTimeEqual(credential.props.secretHash, await sha256Hex(match[2]))) return this.fail("INVALID_CREDENTIAL");
     const now = this.clock.now();
     if (credential.props.status !== "ACTIVE" || credential.props.expiresAt <= now) return this.fail("EXPIRED_OR_REVOKED");
     const windowStartedAt = new Date(Math.floor(now.getTime() / 60_000) * 60_000);
@@ -90,9 +91,21 @@ export class IdempotencyService {
   release(id: string) { return this.repository.releaseIdempotency(id); }
 }
 
-export async function sha256(value: string) { const bytes = new TextEncoder().encode(value); return [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((byte) => byte.toString(16).padStart(2, "0")).join(""); }
+export class RequestRateLimitService {
+  constructor(private readonly repository: ApiSecurityRepository, private readonly clock: Clock) {}
+
+  async consume(scope: string, subjectHash: string, limit: number, windowSeconds = 60) {
+    if (!Number.isSafeInteger(limit) || limit < 1 || !Number.isSafeInteger(windowSeconds) || windowSeconds < 1) throw new DomainValidationError("INVALID_RATE_LIMIT", "Rate-limit configuration is invalid.");
+    const now = this.clock.now();
+    const windowMs = windowSeconds * 1_000;
+    const windowStartedAt = new Date(Math.floor(now.getTime() / windowMs) * windowMs);
+    const count = await this.repository.consumeRequestRateLimit(requireText(scope, "rateLimitScope", 160).toLowerCase(), subjectHash, windowStartedAt, now);
+    if (count > limit) throw new RateLimitExceededError();
+  }
+}
+
+export const sha256 = sha256Hex;
 function randomSecret() { const bytes = crypto.getRandomValues(new Uint8Array(32)); return Buffer.from(bytes).toString("base64url"); }
-function constantTimeEqual(left: string, right: string) { if (left.length !== right.length) return false; let difference = 0; for (let i = 0; i < left.length; i += 1) difference |= left.charCodeAt(i) ^ right.charCodeAt(i); return difference === 0; }
 function safeCredentialSnapshot(value: ServiceCredential) { const p = value.props; return { id: p.id.value, name: p.name, scopes: p.scopes, status: p.status, expiresAt: p.expiresAt, rotatedFromId: p.rotatedFromId?.value ?? null, revokedAt: p.revokedAt }; }
 
 export function parseServiceScopes(value: unknown): ServiceScope[] {

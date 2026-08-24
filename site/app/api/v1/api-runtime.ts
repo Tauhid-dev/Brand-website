@@ -10,11 +10,12 @@ import { D1AdminAccessRepository } from "@/modules/identity/infrastructure/d1-ad
 import { D1CustomerIdentityRepository } from "@/modules/customer/infrastructure/d1-customer-repositories";
 import { D1ApiSecurityRepository } from "@/modules/api/infrastructure/d1-api-security-repository";
 import { D1ApiReadRepository } from "@/modules/api/infrastructure/d1-api-read-repository";
-import { ServiceAuthenticationService } from "@/modules/api/application/api-security-services";
+import { RequestRateLimitService, ServiceAuthenticationService } from "@/modules/api/application/api-security-services";
 import type { ServicePrincipal, ServiceScope } from "@/modules/api/domain/api-security";
 import { CryptoUuidGenerator, SystemClock } from "@/modules/shared/application/ports";
 import type { RequestActor, RequestContext } from "@/modules/shared/application/request-context";
 import { AuthenticationRequiredError } from "@/modules/shared/domain/errors";
+import { sha256Hex } from "@/modules/shared/infrastructure/web-crypto";
 import { D1PortalReadRepository } from "@/modules/portal/infrastructure/d1-portal-read-repository";
 
 export type ApiRuntime = Awaited<ReturnType<typeof createApiRuntime>>;
@@ -47,6 +48,11 @@ export async function authenticateService(runtime: ApiRuntime, request: Request,
   const audit = actorAudit(runtime, { type: "SERVICE", id: principal.credentialId });
   await audit.record({ action: AUDIT_ACTIONS.serviceApiRequested, entityType: "SERVICE_CREDENTIAL", entityId: principal.credentialId, after: { scope, method: request.method, path: new URL(request.url).pathname } });
   return { principal, audit };
+}
+
+export async function enforcePublicRateLimit(runtime: ApiRuntime, request: Request, scope: string, limit = 60) {
+  const subject = request.headers.get("cf-connecting-ip")?.trim() || `local:${request.headers.get("user-agent")?.slice(0, 160) || "anonymous"}`;
+  await new RequestRateLimitService(runtime.security, runtime.clock).consume(scope, await sha256Hex(subject), limit);
 }
 
 function auditFor(db: AppDatabase, ids: CryptoUuidGenerator, clock: SystemClock, metadata: Omit<RequestContext, "actor">, actor: RequestActor) { return new AuditService(new D1AuditEventRepository(db), ids, clock, { ...metadata, actor }); }

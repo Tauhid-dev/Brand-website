@@ -19,8 +19,9 @@ Every response includes `x-request-id`. Errors never expose raw stack traces:
 ```
 
 Validation uses 400, missing authentication 401, missing permission/scope 403,
-missing resources 404, domain/idempotency conflicts 409, service rate limits
-429 and unexpected errors 500.
+missing resources 404, domain/idempotency conflicts 409, oversized requests
+413, rate limits 429, unavailable configured integrations 503 and unexpected
+errors 500.
 
 ## Endpoint catalogue
 
@@ -53,6 +54,7 @@ missing resources 404, domain/idempotency conflicts 409, service rate limits
 | `GET /integrations/agent/customers/{customerId}/entitlements` | Service bearer | `subscription:validate`, `entitlement:read` |
 | `GET /integrations/agent/customers/{customerId}/bootstrap` | Service bearer | `customer:read`, `subscription:validate`, `entitlement:read` |
 | `POST /integrations/agent/customers/{customerId}/provisioning-jobs` | Service bearer | `agent-link:write` |
+| `POST /webhooks/billing/{provider}` | Provider signature | Configured provider only; Stripe uses `Stripe-Signature` |
 
 Agent DTOs contain only business profile, subscription validation,
 entitlements and link/provisioning fields. They exclude notes, negotiated
@@ -98,6 +100,41 @@ are separate from administrators, carry explicit scopes and expiry, can be
 rotated or terminally revoked, and are limited through durable per-minute
 counters. Successful service requests and authentication failures are recorded
 in immutable audit history. Never commit or log raw bearer tokens.
+
+## Billing webhooks
+
+`POST /api/v1/webhooks/billing/stripe` is available only when
+`STRIPE_WEBHOOK_SECRET` is configured. The route reads at most 256 KiB, verifies
+the timestamped HMAC signature against the untouched body before JSON parsing,
+and rejects stale or invalid signatures. Unsupported providers and missing
+configuration fail closed.
+
+The durable inbox is unique on provider and provider event ID. Identical
+delivery retries return success without replaying commercial mutations; a reused
+event ID with a changed payload is rejected. Only minimised normalized facts are
+stored—never the signature, secret or raw provider payload. Supported normalized
+events cover subscription activation/renewal/past-due/cancellation and invoice
+payment success/failure. Reconciliation runs through billing and subscription
+application services and records immutable audit history.
+
+Outbound payment execution is intentionally absent while no production payment
+provider configuration has been approved. This endpoint does not emulate or
+claim a successful payment.
+
+## HTTP hardening and public limits
+
+JSON requests default to a 32 KiB body limit; the billing webhook has its own
+256 KiB raw-body limit. Write requests that carry an `Origin` header must match
+the request origin. Browser responses add a restrictive content security policy,
+clickjacking, MIME-sniffing, referrer, permissions and cross-origin-opener
+protections; HTTPS responses also add HSTS. Privileged endpoints do not emit a
+permissive CORS policy.
+
+Anonymous fixed-window limits are durable and persist only a SHA-256 subject
+hash: plan reads use 120 requests/minute, promotion validation 30/minute and the
+growth-audit/contact submission 5/minute. Service endpoints retain their
+credential-scoped limits described above. Operators should prune expired rate
+windows according to the launch runbook.
 
 ## Examples
 

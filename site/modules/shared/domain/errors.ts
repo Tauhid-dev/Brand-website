@@ -45,3 +45,22 @@ export class RateLimitExceededError extends Error {
     this.name = "RateLimitExceededError";
   }
 }
+
+export class ServiceUnavailableError extends Error {
+  readonly code: string;
+
+  constructor(code = "SERVICE_UNAVAILABLE", message = "The service is temporarily unavailable.") {
+    super(message);
+    this.name = "ServiceUnavailableError";
+    this.code = code;
+  }
+}
+
+export class PayloadTooLargeError extends Error {
+  readonly code = "PAYLOAD_TOO_LARGE";
+
+  constructor(message = "Request payload is too large.") {
+    super(message);
+    this.name = "PayloadTooLargeError";
+  }
+}

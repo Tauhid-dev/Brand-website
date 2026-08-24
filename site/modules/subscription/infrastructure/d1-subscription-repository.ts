@@ -24,6 +24,11 @@ export class D1SubscriptionRepository implements SubscriptionRepository {
     return row ? mapSubscription(row) : null;
   }
 
+  async findByProviderReference(provider: string, externalSubscriptionId: string): Promise<Subscription | null> {
+    const [row] = await this.db.select().from(subscriptions).where(and(eq(subscriptions.externalBillingProvider, provider.toLowerCase()), eq(subscriptions.externalSubscriptionId, externalSubscriptionId))).limit(1);
+    return row ? mapSubscription(row) : null;
+  }
+
   async findCurrentForCustomer(customerId: string): Promise<Subscription | null> {
     const [row] = await this.db.select().from(subscriptions).where(and(
       eq(subscriptions.customerId, customerId),

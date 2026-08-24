@@ -93,6 +93,12 @@ no direct database dependency.
 
 ## Phase 10 — Billing adapter and hardening
 
+Status: complete (24 August 2026).
+
 Billing-provider implementation only when configured, verified/deduplicated
 webhook boundary, E2E/accessibility/security/migration/upgrade tests,
-performance evidence, launch and rollback readiness.
+performance evidence, launch and rollback readiness. The configured Stripe
+webhook verifier authenticates the raw request before parsing and feeds a
+provider-neutral inbox/reconciliation service. Outbound payment execution
+remains disabled until a reviewed provider configuration is supplied; the
+application never substitutes a fake payment path.

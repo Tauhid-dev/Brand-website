@@ -8,6 +8,7 @@ import type {
 
 export interface SubscriptionRepository {
   findById(id: string): Promise<Subscription | null>;
+  findByProviderReference(provider: string, externalSubscriptionId: string): Promise<Subscription | null>;
   findCurrentForCustomer(customerId: string): Promise<Subscription | null>;
   findLatestForCustomer(customerId: string): Promise<Subscription | null>;
   create(subscription: Subscription, price: SubscriptionPrice, entitlements: readonly SubscriptionEntitlement[]): Promise<void>;

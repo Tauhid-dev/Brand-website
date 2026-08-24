@@ -71,6 +71,22 @@ export class Subscription {
       updatedAt: at,
     });
   }
+
+  reconcileProvider(to: SubscriptionStatus, periodStart: Date | null, periodEnd: Date | null, at: Date): Subscription {
+    if (to !== this.props.status && !TRANSITIONS[this.props.status].includes(to)) throw new DomainConflictError("INVALID_SUBSCRIPTION_TRANSITION", `Cannot transition ${this.props.status} to ${to}.`);
+    if (!Number.isFinite(at.getTime()) || at < this.props.updatedAt) throw new DomainValidationError("RETROACTIVE_SUBSCRIPTION_TRANSITION", "Subscription reconciliation cannot move backwards in time.");
+    validateRange(periodStart, periodEnd, "subscription period");
+    return new Subscription({
+      ...this.props,
+      status: to,
+      startedAt: this.props.startedAt ?? (to === "ACTIVE" || to === "TRIAL" ? at : null),
+      currentPeriodStart: periodStart ?? this.props.currentPeriodStart,
+      currentPeriodEnd: periodEnd ?? this.props.currentPeriodEnd,
+      cancelledAt: to === "CANCELLED" ? this.props.cancelledAt ?? at : null,
+      version: this.props.version + 1,
+      updatedAt: at,
+    });
+  }
 }
 
 export function subscriptionAllowsService(status: SubscriptionStatus): boolean {

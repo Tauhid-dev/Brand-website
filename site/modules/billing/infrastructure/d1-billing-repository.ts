@@ -38,6 +38,10 @@ export class D1BillingRepository implements BillingRepository {
     const [row] = await this.db.select().from(invoices).where(eq(invoices.id, id)).limit(1);
     return row ? this.mapInvoice(row) : null;
   }
+  async findInvoiceByProviderReference(providerInvoiceId: string): Promise<Invoice | null> {
+    const [row] = await this.db.select().from(invoices).where(eq(invoices.providerInvoiceId, providerInvoiceId)).limit(1);
+    return row ? this.mapInvoice(row) : null;
+  }
   async listInvoiceHistory(customerId: string, limit: number): Promise<Invoice[]> {
     const rows = await this.db.select().from(invoices).where(eq(invoices.customerId, customerId))
       .orderBy(desc(invoices.createdAt)).limit(limit);

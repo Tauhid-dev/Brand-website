@@ -34,6 +34,7 @@ test("a failed replay-record write keeps a completed commercial operation blocke
     findCredential: durable.findCredential.bind(durable),
     markCredentialUsed: durable.markCredentialUsed.bind(durable),
     consumeRateLimit: durable.consumeRateLimit.bind(durable),
+    consumeRequestRateLimit: durable.consumeRequestRateLimit.bind(durable),
     claimIdempotency: durable.claimIdempotency.bind(durable),
     completeIdempotency: async () => { throw new Error("completion store unavailable"); },
     releaseIdempotency: durable.releaseIdempotency.bind(durable),
