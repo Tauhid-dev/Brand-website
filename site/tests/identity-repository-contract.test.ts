@@ -40,7 +40,7 @@ test("D1 admin repository composes seeded roles into a server-side principal", a
   ).execute(identity);
   const principal = await new AdminAuthenticationService(repository, { now: () => NOW }, audit).execute(identity);
   assert.equal(principal.roles.has("SUPER_ADMIN"), true);
-  assert.equal(principal.permissions.size, 16);
+  assert.equal(principal.permissions.size, 18);
   assert.equal(principal.permissions.has("ADMIN_USER_MANAGE"), true);
   assert.equal(context.client.database.prepare("select count(*) as count from admin_user_roles where admin_user_id = '10000000-0000-4000-8000-000000000001'").get()?.count, 1);
   context.client.close();

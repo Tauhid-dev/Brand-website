@@ -28,6 +28,13 @@ export class D1OperationalQueueRepository implements OperationalQueueRepository 
     const rows = await this.db.select().from(operationalQueueItems).where(and(eq(operationalQueueItems.queueType, queueType), inArray(operationalQueueItems.status, ["OPEN", "CLAIMED"]), lte(operationalQueueItems.availableAt, at))).orderBy(asc(operationalQueueItems.priority), asc(operationalQueueItems.dueAt), asc(operationalQueueItems.createdAt)).limit(limit);
     return rows.map(map);
   }
+  async listActive(limit: number) {
+    const rows = await this.db.select().from(operationalQueueItems)
+      .where(inArray(operationalQueueItems.status, ["OPEN", "CLAIMED"]))
+      .orderBy(asc(operationalQueueItems.priority), asc(operationalQueueItems.availableAt))
+      .limit(limit);
+    return rows.map(map);
+  }
 }
 
 function map(row: typeof operationalQueueItems.$inferSelect) { return new OperationalQueueItem({ id: new EntityId(row.id), queueType: row.queueType as QueueType, sourceType: row.sourceType, sourceId: row.sourceId, customerId: row.customerId ? new EntityId(row.customerId) : null, status: row.status as QueueStatus, priority: row.priority, title: row.title, availableAt: row.availableAt, dueAt: row.dueAt, assignedToAdminUserId: row.assignedToAdminUserId ? new EntityId(row.assignedToAdminUserId) : null, claimedAt: row.claimedAt, resolvedAt: row.resolvedAt, version: row.version, createdAt: row.createdAt, updatedAt: row.updatedAt }); }

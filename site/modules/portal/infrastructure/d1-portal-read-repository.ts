@@ -1,10 +1,10 @@
-import { and, desc, eq, inArray, like, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, like, lt, lte, or, sql } from "drizzle-orm";
 import type { AppDatabase } from "../../../db/index.ts";
 import {
   adminUserRoles, adminUsers, agentLinks, agentProvisioningJobs, auditEvents,
   customerBusinessProfiles, customerDiscounts, customerIntegrations, customerNotes,
   customerPriceOverrides, customers, discountRedemptions, discounts, invoiceLines,
-  invoices, notificationPreferences, offerings, onboardingCases, onboardingTasks,
+  invoices, notificationDeliveries, notificationDeliveryAttempts, notificationPreferences, notificationTemplates, offerings, onboardingCases, onboardingTasks,
   operationalQueueItems, paymentReminders, planFeatures, planPrices, plans,
   priceQuotes, promotionCodes, roles, subscriptionEntitlements, subscriptions,
 } from "../../../db/schema.ts";
@@ -23,7 +23,7 @@ export class D1PortalReadRepository implements PortalReadRepository {
       this.db.select().from(onboardingCases).where(eq(onboardingCases.customerId, customerId)).orderBy(desc(onboardingCases.createdAt)).limit(1).then((rows) => rows[0] ?? null),
       this.db.select({ subscription: subscriptions, planName: plans.name }).from(subscriptions).innerJoin(plans, eq(plans.id, subscriptions.planId)).where(eq(subscriptions.customerId, customerId)).orderBy(desc(subscriptions.createdAt)).limit(1).then((rows) => rows[0] ?? null),
     ]);
-    const [tasks, integrations, entitlements, invoiceRows, reminderRows, links, jobs, preferences] = await Promise.all([
+    const [tasks, integrations, entitlements, invoiceRows, reminderRows, links, jobs, preferences, inAppNotifications] = await Promise.all([
       onboarding ? this.db.select().from(onboardingTasks).where(eq(onboardingTasks.onboardingCaseId, onboarding.id)).orderBy(onboardingTasks.sortOrder) : [],
       this.db.select().from(customerIntegrations).where(eq(customerIntegrations.customerId, customerId)).orderBy(customerIntegrations.integrationCode),
       subscription ? this.db.select().from(subscriptionEntitlements).where(and(eq(subscriptionEntitlements.subscriptionId, subscription.subscription.id), sql`${subscriptionEntitlements.effectiveTo} is null`)).orderBy(subscriptionEntitlements.offeringCode) : [],
@@ -32,6 +32,7 @@ export class D1PortalReadRepository implements PortalReadRepository {
       this.db.select().from(agentLinks).where(eq(agentLinks.customerId, customerId)).orderBy(agentLinks.agentPlatform),
       this.db.select().from(agentProvisioningJobs).where(eq(agentProvisioningJobs.customerId, customerId)).orderBy(desc(agentProvisioningJobs.createdAt)).limit(25),
       this.db.select().from(notificationPreferences).where(eq(notificationPreferences.customerId, customerId)).orderBy(notificationPreferences.notificationCode),
+      this.db.select({ delivery: notificationDeliveries, code: notificationTemplates.code, subject: notificationTemplates.subjectTemplate, bodyTemplate: notificationTemplates.bodyTemplate }).from(notificationDeliveries).innerJoin(notificationTemplates, eq(notificationTemplates.id, notificationDeliveries.templateId)).where(and(eq(notificationDeliveries.customerId, customerId), eq(notificationDeliveries.channel, "IN_APP"), eq(notificationDeliveries.status, "SENT"))).orderBy(desc(notificationDeliveries.sentAt)).limit(50),
     ]);
     return {
       customer: { id: customer.id, externalReference: customer.externalReference, businessName: customer.businessName, contactName: customer.contactName, email: customer.email, phone: customer.phone, industry: customer.industry, websiteUrl: customer.websiteUrl, status: customer.status, subscriptionStatus: subscription?.subscription.status ?? null, planName: subscription?.planName ?? null, createdAt: customer.createdAt },
@@ -45,20 +46,24 @@ export class D1PortalReadRepository implements PortalReadRepository {
       agentLinks: links,
       agentJobs: jobs,
       notificationPreferences: preferences,
+      inAppNotifications: inAppNotifications.map((row) => ({ ...row.delivery, code: row.code, subject: row.subject, body: renderNotificationBody(row.bodyTemplate, row.delivery.templateVariables) })),
     };
   }
 
   async getAdminDashboard(): Promise<AdminDashboardView> {
-    const [customerCount, subscriptionCount, onboardingCount, invoiceCount, queueCount, queues, recentCustomers] = await Promise.all([
+    const now = new Date();
+    const [customerCount, subscriptionCount, onboardingCount, invoiceCount, queueCount, attentionToday, overdueWork, queues, recentCustomers] = await Promise.all([
       countRows(this.db, customers),
       this.db.select({ count: sql<number>`count(*)` }).from(subscriptions).where(inArray(subscriptions.status, CURRENT_SUBSCRIPTION_STATUSES)).then(firstCount),
       this.db.select({ count: sql<number>`count(*)` }).from(onboardingCases).where(inArray(onboardingCases.status, ["BLOCKED", "READY"])).then(firstCount),
       this.db.select({ count: sql<number>`count(*)` }).from(invoices).where(inArray(invoices.status, ["OPEN", "UNCOLLECTIBLE"])).then(firstCount),
       this.db.select({ count: sql<number>`count(*)` }).from(operationalQueueItems).where(inArray(operationalQueueItems.status, ["OPEN", "CLAIMED"])).then(firstCount),
+      this.db.select({ count: sql<number>`count(*)` }).from(operationalQueueItems).where(and(inArray(operationalQueueItems.status, ["OPEN", "CLAIMED"]), lte(operationalQueueItems.availableAt, now))).then(firstCount),
+      this.db.select({ count: sql<number>`count(*)` }).from(operationalQueueItems).where(and(inArray(operationalQueueItems.status, ["OPEN", "CLAIMED"]), lt(operationalQueueItems.dueAt, now))).then(firstCount),
       this.db.select().from(operationalQueueItems).where(inArray(operationalQueueItems.status, ["OPEN", "CLAIMED"])).orderBy(operationalQueueItems.priority, operationalQueueItems.availableAt).limit(20),
       this.searchCustomers({ limit: 8 }),
     ]);
-    return { metrics: { customers: customerCount, currentSubscriptions: subscriptionCount, onboardingAttention: onboardingCount, openInvoices: invoiceCount, openQueueItems: queueCount }, queues, recentCustomers };
+    return { metrics: { customers: customerCount, currentSubscriptions: subscriptionCount, onboardingAttention: onboardingCount, openInvoices: invoiceCount, openQueueItems: queueCount, attentionToday, overdueWork }, queues, recentCustomers };
   }
 
   async searchCustomers(input: { query?: string; subscriptionStatus?: string; limit?: number }): Promise<PortalCustomerSummary[]> {
@@ -117,9 +122,41 @@ export class D1PortalReadRepository implements PortalReadRepository {
   async getSubscriptions() { return this.db.select({ subscription: subscriptions, customerName: customers.businessName, planName: plans.name }).from(subscriptions).innerJoin(customers, eq(customers.id, subscriptions.customerId)).innerJoin(plans, eq(plans.id, subscriptions.planId)).orderBy(desc(subscriptions.updatedAt)).limit(200).then((rows) => rows.map((row) => ({ ...row.subscription, customerName: row.customerName, planName: row.planName }))); }
   async getBilling(at = new Date()) { const atMs = at.getTime(); const [invoiceRows, reminderRows] = await Promise.all([this.db.select({ invoice: invoices, customerName: customers.businessName, lineCount: sql<number>`count(${invoiceLines.id})`, paymentState: sql<string>`case when ${invoices.status} = 'PAID' then 'PAID' when ${invoices.status} = 'UNCOLLECTIBLE' then 'UNCOLLECTIBLE' when ${invoices.status} = 'OPEN' and ${invoices.amountDueMinor} > 0 and ${invoices.dueAt} < ${atMs} then 'PAYMENT_OVERDUE' when ${invoices.status} = 'OPEN' and ${invoices.amountDueMinor} > 0 then 'PAYMENT_DUE' else 'NO_PAYMENT_DUE' end` }).from(invoices).innerJoin(customers, eq(customers.id, invoices.customerId)).leftJoin(invoiceLines, eq(invoiceLines.invoiceId, invoices.id)).groupBy(invoices.id).orderBy(desc(invoices.createdAt)).limit(200), this.db.select({ reminder: paymentReminders, invoiceNumber: invoices.invoiceNumber, customerName: customers.businessName }).from(paymentReminders).innerJoin(invoices, eq(invoices.id, paymentReminders.invoiceId)).innerJoin(customers, eq(customers.id, invoices.customerId)).orderBy(desc(paymentReminders.createdAt)).limit(200)]); return { invoices: invoiceRows.map((row) => ({ ...row.invoice, customerName: row.customerName, lineCount: Number(row.lineCount), paymentState: row.paymentState })), reminders: reminderRows.map((row) => ({ ...row.reminder, invoiceNumber: row.invoiceNumber, customerName: row.customerName })) }; }
   async getAgents() { const [links, jobs] = await Promise.all([this.db.select({ link: agentLinks, customerName: customers.businessName }).from(agentLinks).innerJoin(customers, eq(customers.id, agentLinks.customerId)).orderBy(desc(agentLinks.updatedAt)), this.db.select({ job: agentProvisioningJobs, customerName: customers.businessName, platform: agentLinks.agentPlatform }).from(agentProvisioningJobs).innerJoin(customers, eq(customers.id, agentProvisioningJobs.customerId)).innerJoin(agentLinks, eq(agentLinks.id, agentProvisioningJobs.agentLinkId)).orderBy(desc(agentProvisioningJobs.createdAt)).limit(200)]); return { links: links.map((row) => ({ ...row.link, customerName: row.customerName })), jobs: jobs.map((row) => ({ ...row.job, customerName: row.customerName, platform: row.platform })) }; }
+  async getOperations(at = new Date()) {
+    const [queueRows, deliveryRows, templateRows, attentionToday, overdueWork, unclaimedWork, failedDeliveries, processingDeliveries] = await Promise.all([
+      this.db.select({ item: operationalQueueItems, customerName: customers.businessName }).from(operationalQueueItems).leftJoin(customers, eq(customers.id, operationalQueueItems.customerId)).where(inArray(operationalQueueItems.status, ["OPEN", "CLAIMED"])).orderBy(operationalQueueItems.priority, operationalQueueItems.dueAt, operationalQueueItems.availableAt).limit(200),
+      this.db.select({ delivery: notificationDeliveries, code: notificationTemplates.code, subject: notificationTemplates.subjectTemplate, attemptCount: sql<number>`count(${notificationDeliveryAttempts.id})` }).from(notificationDeliveries).innerJoin(notificationTemplates, eq(notificationTemplates.id, notificationDeliveries.templateId)).leftJoin(notificationDeliveryAttempts, eq(notificationDeliveryAttempts.deliveryId, notificationDeliveries.id)).groupBy(notificationDeliveries.id).orderBy(desc(notificationDeliveries.createdAt)).limit(200),
+      this.db.select().from(notificationTemplates).where(eq(notificationTemplates.active, true)).orderBy(notificationTemplates.code, notificationTemplates.channel),
+      this.db.select({ count: sql<number>`count(*)` }).from(operationalQueueItems).where(and(inArray(operationalQueueItems.status, ["OPEN", "CLAIMED"]), lte(operationalQueueItems.availableAt, at))).then(firstCount),
+      this.db.select({ count: sql<number>`count(*)` }).from(operationalQueueItems).where(and(inArray(operationalQueueItems.status, ["OPEN", "CLAIMED"]), lt(operationalQueueItems.dueAt, at))).then(firstCount),
+      this.db.select({ count: sql<number>`count(*)` }).from(operationalQueueItems).where(eq(operationalQueueItems.status, "OPEN")).then(firstCount),
+      this.db.select({ count: sql<number>`count(*)` }).from(notificationDeliveries).where(eq(notificationDeliveries.status, "FAILED")).then(firstCount),
+      this.db.select({ count: sql<number>`count(*)` }).from(notificationDeliveries).where(eq(notificationDeliveries.status, "PROCESSING")).then(firstCount),
+    ]);
+    return {
+      metrics: { attentionToday, overdueWork, unclaimedWork, failedDeliveries, processingDeliveries },
+      queues: queueRows.map((row) => ({ ...row.item, customerName: row.customerName, workKind: operationalWorkKind(row.item.sourceType, row.item.queueType, row.item.title) })),
+      deliveries: deliveryRows.map((row) => ({ ...row.delivery, code: row.code, subject: row.subject, attemptHistory: Number(row.attemptCount) })),
+      templates: templateRows,
+    };
+  }
   async getAuditEvents(limit = 200) { return this.db.select().from(auditEvents).orderBy(desc(auditEvents.createdAt)).limit(Math.min(Math.max(limit, 1), 500)); }
   async getAdminUsers() { return this.db.select({ user: adminUsers, roleCode: roles.code }).from(adminUsers).leftJoin(adminUserRoles, eq(adminUserRoles.adminUserId, adminUsers.id)).leftJoin(roles, eq(roles.id, adminUserRoles.roleId)).orderBy(adminUsers.displayName).then((rows) => { const grouped = new Map<string, Record<string, unknown>>(); for (const row of rows) { const current = grouped.get(row.user.id) ?? { ...row.user, roles: [] as string[] }; if (row.roleCode) (current.roles as string[]).push(row.roleCode); grouped.set(row.user.id, current); } return [...grouped.values()]; }); }
 }
 
 async function countRows(db: AppDatabase, table: typeof customers) { return db.select({ count: sql<number>`count(*)` }).from(table).then(firstCount); }
 function firstCount(rows: Array<{ count: number }>) { return Number(rows[0]?.count ?? 0); }
+function operationalWorkKind(sourceType: string, queueType: string, title: string) {
+  if (sourceType === "CUSTOMER_REGISTRATION") return "NEW_CUSTOMER_REGISTRATION";
+  if (sourceType === "LAUNCH_READY_CUSTOMER") return "LAUNCH_READY";
+  if (sourceType === "ONBOARDING_CASE") return "ONBOARDING_IN_PROGRESS";
+  if (sourceType === "CUSTOMER_INTEGRATION") return "INTEGRATION_PROBLEM";
+  if (sourceType === "AGENT_PROVISIONING_JOB") return "AGENT_PROVISIONING_REQUIRED";
+  if (queueType === "BILLING_ATTENTION" && title.startsWith("Overdue")) return "PAYMENT_OVERDUE";
+  if (queueType === "BILLING_ATTENTION") return "BILLING_ATTENTION";
+  if (queueType === "CUSTOMER_ACTION") return "PENDING_CUSTOMER_ACTION";
+  return "PENDING_INTERNAL_ACTION";
+}
+function renderNotificationBody(template: string, variables: Record<string, unknown>) {
+  return template.replace(/\{\{([a-z][a-z0-9_]*)\}\}/g, (_match, key: string) => String(variables[key] ?? ""));
+}

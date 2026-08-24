@@ -3,9 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { AddCustomerNoteService } from "@/modules/customer/application/customer-services";
 import { D1CustomerRepository } from "@/modules/customer/infrastructure/d1-customer-repositories";
-import { NotificationPreferenceService } from "@/modules/notification/application/notification-services";
-import type { NotificationChannel, NotificationPreferenceStatus } from "@/modules/notification/domain/notification";
+import { CommercialNotificationOrchestrationService, MarkInAppNotificationReadService, NotificationPreferenceService, QueueNotificationService } from "@/modules/notification/application/notification-services";
+import { NOTIFICATION_CHANNELS, type NotificationChannel, type NotificationPreferenceStatus } from "@/modules/notification/domain/notification";
+import { D1CommercialNotificationSource } from "@/modules/notification/infrastructure/d1-commercial-notification-source";
 import { D1NotificationRepository } from "@/modules/notification/infrastructure/d1-notification-repository";
+import { OperationalQueueReconciliationService, OperationalQueueService } from "@/modules/operations/application/operational-queue-services";
+import { D1OperationalProjectionSource } from "@/modules/operations/infrastructure/d1-operational-projection-source";
+import { D1OperationalQueueRepository } from "@/modules/operations/infrastructure/d1-operational-queue-repository";
 import { AddBillingNoteService, UpdateCustomerBillingProfileService } from "@/modules/billing/application/billing-operations-services";
 import { D1BillingRepository } from "@/modules/billing/infrastructure/d1-billing-repository";
 import { D1PricingRepository } from "@/modules/pricing/infrastructure/d1-pricing-repository";
@@ -93,9 +97,51 @@ export async function setNotificationPreferenceAction(data: FormData) {
   const principal = await customerPortalSession("/account#notifications");
   const channel = required(data, "channel", 20) as NotificationChannel;
   const status = required(data, "status", 20) as NotificationPreferenceStatus;
-  if (!(["EMAIL", "SMS", "IN_APP"] as const).includes(channel)) throw new DomainValidationError("INVALID_CHANNEL", "Notification channel is invalid.");
+  if (!NOTIFICATION_CHANNELS.includes(channel)) throw new DomainValidationError("INVALID_CHANNEL", "Notification channel is invalid.");
   if (!(["OPTED_IN", "OPTED_OUT"] as const).includes(status)) throw new DomainValidationError("INVALID_PREFERENCE", "Notification preference is invalid.");
   const runtime = await actionRuntime({ type: "CUSTOMER", id: principal.customerId });
   await new NotificationPreferenceService(new D1NotificationRepository(runtime.db), runtime.ids, runtime.clock, runtime.audit).set({ customerId: principal.customerId, code: required(data, "code", 100), channel, status, updatedBy: principal.identityId });
   revalidatePath("/account");
+}
+
+export async function markInAppNotificationReadAction(data: FormData) {
+  requireConfirmation(data);
+  const principal = await customerPortalSession("/account#notifications");
+  const runtime = await actionRuntime({ type: "CUSTOMER", id: principal.customerId });
+  await new MarkInAppNotificationReadService(new D1NotificationRepository(runtime.db), runtime.clock, runtime.audit).execute(required(data, "deliveryId", 80), principal.customerId);
+  revalidatePath("/account");
+}
+
+export async function operationalQueueAction(data: FormData) {
+  requireConfirmation(data);
+  const principal = await adminPortalSession("/admin/operations", "OPERATIONS_WRITE");
+  const runtime = await actionRuntime({ type: "ADMIN", id: principal.adminUserId });
+  const service = new OperationalQueueService(new D1OperationalQueueRepository(runtime.db), runtime.clock, runtime.audit);
+  const itemId = required(data, "itemId", 80);
+  switch (required(data, "operation", 20)) {
+    case "CLAIM": await service.claim(itemId, principal.adminUserId); break;
+    case "COMPLETE": await service.resolve(itemId, "COMPLETED"); break;
+    case "DISMISS": await service.resolve(itemId, "DISMISSED"); break;
+    default: throw new DomainValidationError("INVALID_QUEUE_OPERATION", "Operational queue action is invalid.");
+  }
+  revalidatePath("/admin");
+  revalidatePath("/admin/operations");
+}
+
+export async function reconcileOperationalQueuesAction(data: FormData) {
+  requireConfirmation(data);
+  const principal = await adminPortalSession("/admin/operations", "OPERATIONS_WRITE");
+  const runtime = await actionRuntime({ type: "ADMIN", id: principal.adminUserId });
+  await new OperationalQueueReconciliationService(new D1OperationalQueueRepository(runtime.db), new D1OperationalProjectionSource(runtime.db), runtime.ids, runtime.clock, runtime.audit).execute();
+  revalidatePath("/admin");
+  revalidatePath("/admin/operations");
+}
+
+export async function reconcileCommercialNotificationsAction(data: FormData) {
+  requireConfirmation(data);
+  const principal = await adminPortalSession("/admin/operations", "OPERATIONS_WRITE");
+  const runtime = await actionRuntime({ type: "ADMIN", id: principal.adminUserId });
+  const repository = new D1NotificationRepository(runtime.db);
+  await new CommercialNotificationOrchestrationService(new D1CommercialNotificationSource(runtime.db), new QueueNotificationService(repository, runtime.ids, runtime.clock, runtime.audit), runtime.clock).reconcile();
+  revalidatePath("/admin/operations");
 }

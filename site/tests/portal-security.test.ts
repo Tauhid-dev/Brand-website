@@ -8,11 +8,13 @@ test("protected portal pages are dynamic and authenticate on the server", () => 
   const customer = read("../app/account/page.tsx");
   const admin = read("../app/admin/page.tsx");
   const sections = read("../app/admin/[section]/page.tsx");
+  const operations = read("../app/admin/operations/page.tsx");
   assert.match(customer, /dynamic = "force-dynamic"/);
   assert.match(customer, /customerPortalSession\(/);
   assert.match(admin, /adminPortalSession\("\/admin", "CUSTOMER_READ"\)/);
   assert.match(sections, /permission: "AUDIT_READ"/);
   assert.match(sections, /permission: "ADMIN_USER_MANAGE"/);
+  assert.match(operations, /adminPortalSession\("\/admin\/operations", "OPERATIONS_READ"\)/);
 });
 
 test("commercial mutations require confirmation and permission checks", () => {
@@ -21,6 +23,7 @@ test("commercial mutations require confirmation and permission checks", () => {
   assert.match(actions, /"CUSTOMER_WRITE"/);
   assert.match(actions, /"SUBSCRIPTION_WRITE"/);
   assert.match(actions, /"BILLING_WRITE"/);
+  assert.match(actions, /"OPERATIONS_WRITE"/);
   assert.match(actions, /subscriptionBillingOperationAction/);
   assert.match(actions, /updateBillingProfileAction/);
   assert.match(actions, /addBillingNoteAction/);
