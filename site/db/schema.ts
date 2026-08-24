@@ -719,3 +719,291 @@ export const auditEvents = sqliteTable(
     check("audit_events_actor_id_check", sql`(${table.actorType} = 'ANONYMOUS' and ${table.actorId} is null) or (${table.actorType} <> 'ANONYMOUS' and ${table.actorId} is not null)`),
   ],
 );
+
+export const onboardingCases = sqliteTable(
+  "onboarding_cases",
+  {
+    id: text("id").primaryKey(),
+    customerId: text("customer_id").notNull().references(() => customers.id, { onDelete: "restrict" }),
+    status: text("status").notNull(),
+    startedAt: timestamp("started_at"),
+    readyAt: timestamp("ready_at"),
+    completedAt: timestamp("completed_at"),
+    cancelledAt: timestamp("cancelled_at"),
+    version: integer("version").notNull().default(1),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("onboarding_cases_current_customer_uq").on(table.customerId)
+      .where(sql`${table.status} in ('NOT_STARTED', 'IN_PROGRESS', 'BLOCKED', 'READY')`),
+    index("onboarding_cases_customer_status_idx").on(table.customerId, table.status),
+    index("onboarding_cases_status_updated_idx").on(table.status, table.updatedAt),
+    check("onboarding_cases_status_check", sql`${table.status} in ('NOT_STARTED', 'IN_PROGRESS', 'BLOCKED', 'READY', 'COMPLETED', 'CANCELLED')`),
+    check("onboarding_cases_version_check", sql`${table.version} > 0`),
+    check("onboarding_cases_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt}`),
+    check("onboarding_cases_lifecycle_check", sql`
+      (${table.status} = 'NOT_STARTED' and ${table.startedAt} is null and ${table.readyAt} is null and ${table.completedAt} is null and ${table.cancelledAt} is null) or
+      (${table.status} in ('IN_PROGRESS', 'BLOCKED') and ${table.startedAt} is not null and ${table.readyAt} is null and ${table.completedAt} is null and ${table.cancelledAt} is null) or
+      (${table.status} = 'READY' and ${table.startedAt} is not null and ${table.readyAt} is not null and ${table.completedAt} is null and ${table.cancelledAt} is null) or
+      (${table.status} = 'COMPLETED' and ${table.startedAt} is not null and ${table.readyAt} is not null and ${table.completedAt} is not null and ${table.cancelledAt} is null) or
+      (${table.status} = 'CANCELLED' and ${table.completedAt} is null and ${table.cancelledAt} is not null)
+    `),
+  ],
+);
+
+export const onboardingTasks = sqliteTable(
+  "onboarding_tasks",
+  {
+    id: text("id").primaryKey(),
+    onboardingCaseId: text("onboarding_case_id").notNull().references(() => onboardingCases.id, { onDelete: "cascade" }),
+    code: text("code").notNull(),
+    title: text("title").notNull(),
+    description: text("description"),
+    ownerType: text("owner_type").notNull(),
+    status: text("status").notNull(),
+    required: integer("required", { mode: "boolean" }).notNull().default(true),
+    dueAt: timestamp("due_at"),
+    blockedReason: text("blocked_reason"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    completedAt: timestamp("completed_at"),
+    version: integer("version").notNull().default(1),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("onboarding_tasks_case_code_uq").on(table.onboardingCaseId, table.code),
+    index("onboarding_tasks_case_owner_status_idx").on(table.onboardingCaseId, table.ownerType, table.status),
+    index("onboarding_tasks_status_due_idx").on(table.status, table.dueAt),
+    check("onboarding_tasks_code_check", sql`${table.code} = lower(${table.code})`),
+    check("onboarding_tasks_owner_check", sql`${table.ownerType} in ('CUSTOMER', 'INTERNAL')`),
+    check("onboarding_tasks_status_check", sql`${table.status} in ('TODO', 'IN_PROGRESS', 'BLOCKED', 'DONE', 'SKIPPED', 'CANCELLED')`),
+    check("onboarding_tasks_order_check", sql`${table.sortOrder} >= 0`),
+    check("onboarding_tasks_version_check", sql`${table.version} > 0`),
+    check("onboarding_tasks_completion_check", sql`(${table.status} = 'DONE' and ${table.completedAt} is not null) or (${table.status} <> 'DONE' and ${table.completedAt} is null)`),
+    check("onboarding_tasks_blocked_check", sql`(${table.status} = 'BLOCKED' and ${table.blockedReason} is not null) or (${table.status} <> 'BLOCKED' and ${table.blockedReason} is null)`),
+    check("onboarding_tasks_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt}`),
+  ],
+);
+
+export const onboardingTaskDependencies = sqliteTable(
+  "onboarding_task_dependencies",
+  {
+    taskId: text("task_id").notNull().references(() => onboardingTasks.id, { onDelete: "cascade" }),
+    dependsOnTaskId: text("depends_on_task_id").notNull().references(() => onboardingTasks.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.taskId, table.dependsOnTaskId] }),
+    index("onboarding_task_dependencies_dependency_idx").on(table.dependsOnTaskId),
+    check("onboarding_task_dependencies_not_self_check", sql`${table.taskId} <> ${table.dependsOnTaskId}`),
+  ],
+);
+
+export const customerIntegrations = sqliteTable(
+  "customer_integrations",
+  {
+    id: text("id").primaryKey(),
+    customerId: text("customer_id").notNull().references(() => customers.id, { onDelete: "restrict" }),
+    integrationCode: text("integration_code").notNull(),
+    category: text("category").notNull(),
+    status: text("status").notNull(),
+    lastCheckedAt: timestamp("last_checked_at"),
+    lastSuccessfulAt: timestamp("last_successful_at"),
+    errorCode: text("error_code"),
+    metadata: text("metadata_json", { mode: "json" }).$type<Record<string, unknown>>().notNull().default({}),
+    version: integer("version").notNull().default(1),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("customer_integrations_customer_code_uq").on(table.customerId, table.integrationCode),
+    index("customer_integrations_customer_status_idx").on(table.customerId, table.status),
+    index("customer_integrations_category_status_idx").on(table.category, table.status),
+    check("customer_integrations_code_check", sql`${table.integrationCode} = lower(${table.integrationCode})`),
+    check("customer_integrations_status_check", sql`${table.status} in ('NOT_CONNECTED', 'PENDING', 'HEALTHY', 'DEGRADED', 'ERROR', 'DISABLED')`),
+    check("customer_integrations_error_check", sql`(${table.status} in ('DEGRADED', 'ERROR') and ${table.errorCode} is not null) or (${table.status} not in ('DEGRADED', 'ERROR') and ${table.errorCode} is null)`),
+    check("customer_integrations_version_check", sql`${table.version} > 0`),
+    check("customer_integrations_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt}`),
+  ],
+);
+
+export const agentLinks = sqliteTable(
+  "agent_links",
+  {
+    id: text("id").primaryKey(),
+    customerId: text("customer_id").notNull().references(() => customers.id, { onDelete: "restrict" }),
+    agentPlatform: text("agent_platform").notNull(),
+    externalAgentId: text("external_agent_id"),
+    status: text("status").notNull(),
+    lastSyncedAt: timestamp("last_synced_at"),
+    version: integer("version").notNull().default(1),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("agent_links_customer_platform_uq").on(table.customerId, table.agentPlatform),
+    uniqueIndex("agent_links_platform_external_uq").on(table.agentPlatform, table.externalAgentId)
+      .where(sql`${table.externalAgentId} is not null`),
+    index("agent_links_status_idx").on(table.status),
+    check("agent_links_platform_check", sql`${table.agentPlatform} = lower(${table.agentPlatform})`),
+    check("agent_links_status_check", sql`${table.status} in ('NOT_PROVISIONED', 'PENDING', 'ACTIVE', 'SUSPENDED', 'ERROR')`),
+    check("agent_links_external_check", sql`${table.status} not in ('ACTIVE', 'SUSPENDED') or ${table.externalAgentId} is not null`),
+    check("agent_links_version_check", sql`${table.version} > 0`),
+    check("agent_links_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt}`),
+  ],
+);
+
+export const agentProvisioningJobs = sqliteTable(
+  "agent_provisioning_jobs",
+  {
+    id: text("id").primaryKey(),
+    agentLinkId: text("agent_link_id").notNull().references(() => agentLinks.id, { onDelete: "restrict" }),
+    customerId: text("customer_id").notNull().references(() => customers.id, { onDelete: "restrict" }),
+    operation: text("operation").notNull(),
+    status: text("status").notNull(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    attemptCount: integer("attempt_count").notNull().default(0),
+    maxAttempts: integer("max_attempts").notNull().default(5),
+    nextAttemptAt: timestamp("next_attempt_at"),
+    errorCategory: text("error_category"),
+    requestedAt: timestamp("requested_at").notNull(),
+    startedAt: timestamp("started_at"),
+    completedAt: timestamp("completed_at"),
+    version: integer("version").notNull().default(1),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("agent_provisioning_jobs_idempotency_uq").on(table.idempotencyKey),
+    index("agent_provisioning_jobs_link_status_idx").on(table.agentLinkId, table.status, table.nextAttemptAt),
+    index("agent_provisioning_jobs_customer_status_idx").on(table.customerId, table.status),
+    check("agent_provisioning_jobs_operation_check", sql`${table.operation} in ('PROVISION', 'UPDATE', 'SUSPEND', 'RESUME')`),
+    check("agent_provisioning_jobs_status_check", sql`${table.status} in ('PENDING', 'IN_PROGRESS', 'SUCCEEDED', 'FAILED', 'CANCELLED')`),
+    check("agent_provisioning_jobs_attempt_check", sql`${table.attemptCount} >= 0 and ${table.maxAttempts} > 0 and ${table.attemptCount} <= ${table.maxAttempts}`),
+    check("agent_provisioning_jobs_outcome_check", sql`(${table.status} = 'SUCCEEDED' and ${table.completedAt} is not null and ${table.errorCategory} is null) or (${table.status} = 'FAILED' and ${table.completedAt} is not null and ${table.errorCategory} is not null) or (${table.status} in ('PENDING', 'IN_PROGRESS', 'CANCELLED') and ${table.completedAt} is null and ${table.errorCategory} is null)`),
+    check("agent_provisioning_jobs_version_check", sql`${table.version} > 0`),
+    check("agent_provisioning_jobs_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt}`),
+  ],
+);
+
+export const operationalQueueItems = sqliteTable(
+  "operational_queue_items",
+  {
+    id: text("id").primaryKey(),
+    queueType: text("queue_type").notNull(),
+    sourceType: text("source_type").notNull(),
+    sourceId: text("source_id").notNull(),
+    customerId: text("customer_id").references(() => customers.id, { onDelete: "restrict" }),
+    status: text("status").notNull(),
+    priority: integer("priority").notNull().default(50),
+    title: text("title").notNull(),
+    availableAt: timestamp("available_at").notNull(),
+    dueAt: timestamp("due_at"),
+    assignedToAdminUserId: text("assigned_to_admin_user_id").references(() => adminUsers.id, { onDelete: "restrict" }),
+    claimedAt: timestamp("claimed_at"),
+    resolvedAt: timestamp("resolved_at"),
+    version: integer("version").notNull().default(1),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("operational_queue_items_open_source_uq").on(table.queueType, table.sourceType, table.sourceId)
+      .where(sql`${table.status} in ('OPEN', 'CLAIMED')`),
+    index("operational_queue_items_work_idx").on(table.queueType, table.status, table.priority, table.availableAt),
+    index("operational_queue_items_customer_status_idx").on(table.customerId, table.status),
+    index("operational_queue_items_assignee_status_idx").on(table.assignedToAdminUserId, table.status),
+    check("operational_queue_items_type_check", sql`${table.queueType} in ('CUSTOMER_ACTION', 'INTERNAL_ACTION', 'BILLING_ATTENTION', 'AGENT_PROVISIONING')`),
+    check("operational_queue_items_status_check", sql`${table.status} in ('OPEN', 'CLAIMED', 'COMPLETED', 'DISMISSED')`),
+    check("operational_queue_items_priority_check", sql`${table.priority} between 0 and 100`),
+    check("operational_queue_items_claim_check", sql`(${table.status} = 'CLAIMED' and ${table.assignedToAdminUserId} is not null and ${table.claimedAt} is not null and ${table.resolvedAt} is null) or (${table.status} = 'OPEN' and ${table.assignedToAdminUserId} is null and ${table.claimedAt} is null and ${table.resolvedAt} is null) or (${table.status} in ('COMPLETED', 'DISMISSED') and ${table.resolvedAt} is not null)`),
+    check("operational_queue_items_version_check", sql`${table.version} > 0`),
+    check("operational_queue_items_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt}`),
+  ],
+);
+
+export const notificationTemplates = sqliteTable(
+  "notification_templates",
+  {
+    id: text("id").primaryKey(),
+    code: text("code").notNull(),
+    channel: text("channel").notNull(),
+    version: integer("version").notNull(),
+    subjectTemplate: text("subject_template"),
+    bodyTemplate: text("body_template").notNull(),
+    requiredServiceNotice: integer("required_service_notice", { mode: "boolean" }).notNull().default(false),
+    active: integer("active", { mode: "boolean" }).notNull().default(true),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("notification_templates_code_channel_version_uq").on(table.code, table.channel, table.version),
+    uniqueIndex("notification_templates_active_code_channel_uq").on(table.code, table.channel)
+      .where(sql`${table.active} = 1`),
+    check("notification_templates_code_check", sql`${table.code} = lower(${table.code})`),
+    check("notification_templates_channel_check", sql`${table.channel} in ('EMAIL', 'SMS', 'IN_APP')`),
+    check("notification_templates_version_check", sql`${table.version} > 0`),
+    check("notification_templates_subject_check", sql`${table.channel} <> 'EMAIL' or ${table.subjectTemplate} is not null`),
+    check("notification_templates_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt}`),
+  ],
+);
+
+export const notificationPreferences = sqliteTable(
+  "notification_preferences",
+  {
+    id: text("id").primaryKey(),
+    customerId: text("customer_id").notNull().references(() => customers.id, { onDelete: "restrict" }),
+    notificationCode: text("notification_code").notNull(),
+    channel: text("channel").notNull(),
+    status: text("status").notNull(),
+    updatedBy: text("updated_by").notNull(),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("notification_preferences_customer_code_channel_uq").on(table.customerId, table.notificationCode, table.channel),
+    index("notification_preferences_customer_idx").on(table.customerId),
+    check("notification_preferences_code_check", sql`${table.notificationCode} = lower(${table.notificationCode})`),
+    check("notification_preferences_channel_check", sql`${table.channel} in ('EMAIL', 'SMS', 'IN_APP')`),
+    check("notification_preferences_status_check", sql`${table.status} in ('OPTED_IN', 'OPTED_OUT')`),
+    check("notification_preferences_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt}`),
+  ],
+);
+
+export const notificationDeliveries = sqliteTable(
+  "notification_deliveries",
+  {
+    id: text("id").primaryKey(),
+    templateId: text("template_id").notNull().references(() => notificationTemplates.id, { onDelete: "restrict" }),
+    customerId: text("customer_id").references(() => customers.id, { onDelete: "restrict" }),
+    recipientType: text("recipient_type").notNull(),
+    recipientId: text("recipient_id").notNull(),
+    channel: text("channel").notNull(),
+    status: text("status").notNull(),
+    templateVariables: text("template_variables_json", { mode: "json" }).$type<Record<string, unknown>>().notNull().default({}),
+    idempotencyKey: text("idempotency_key").notNull(),
+    scheduledFor: timestamp("scheduled_for").notNull(),
+    attemptCount: integer("attempt_count").notNull().default(0),
+    maxAttempts: integer("max_attempts").notNull().default(5),
+    nextAttemptAt: timestamp("next_attempt_at"),
+    providerReference: text("provider_reference"),
+    errorCategory: text("error_category"),
+    sentAt: timestamp("sent_at"),
+    version: integer("version").notNull().default(1),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("notification_deliveries_idempotency_uq").on(table.idempotencyKey),
+    index("notification_deliveries_retry_idx").on(table.status, table.nextAttemptAt, table.scheduledFor),
+    index("notification_deliveries_customer_created_idx").on(table.customerId, table.createdAt),
+    index("notification_deliveries_recipient_status_idx").on(table.recipientType, table.recipientId, table.status),
+    check("notification_deliveries_recipient_check", sql`${table.recipientType} in ('CUSTOMER', 'ADMIN', 'SYSTEM')`),
+    check("notification_deliveries_channel_check", sql`${table.channel} in ('EMAIL', 'SMS', 'IN_APP')`),
+    check("notification_deliveries_status_check", sql`${table.status} in ('PENDING', 'PROCESSING', 'SENT', 'FAILED', 'CANCELLED')`),
+    check("notification_deliveries_attempt_check", sql`${table.attemptCount} >= 0 and ${table.maxAttempts} > 0 and ${table.attemptCount} <= ${table.maxAttempts}`),
+    check("notification_deliveries_outcome_check", sql`(${table.status} = 'SENT' and ${table.sentAt} is not null and ${table.providerReference} is not null and ${table.errorCategory} is null) or (${table.status} = 'FAILED' and ${table.sentAt} is null and ${table.errorCategory} is not null) or (${table.status} in ('PENDING', 'PROCESSING', 'CANCELLED') and ${table.sentAt} is null and ${table.errorCategory} is null)`),
+    check("notification_deliveries_version_check", sql`${table.version} > 0`),
+    check("notification_deliveries_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt}`),
+  ],
+);
