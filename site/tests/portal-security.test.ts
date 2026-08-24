@@ -20,6 +20,10 @@ test("commercial mutations require confirmation and permission checks", () => {
   assert.match(actions, /requireConfirmation\(data\)/g);
   assert.match(actions, /"CUSTOMER_WRITE"/);
   assert.match(actions, /"SUBSCRIPTION_WRITE"/);
+  assert.match(actions, /"BILLING_WRITE"/);
+  assert.match(actions, /subscriptionBillingOperationAction/);
+  assert.match(actions, /updateBillingProfileAction/);
+  assert.match(actions, /addBillingNoteAction/);
   assert.match(actions, /data\.get\("confirmed"\) !== "yes"/);
 });
 

@@ -36,6 +36,9 @@ errors 500.
 | `GET/POST /admin/customers` | ChatGPT SIWC admin | `CUSTOMER_READ` / `CUSTOMER_WRITE` |
 | `GET /admin/customers/{customerId}` | ChatGPT SIWC admin | `CUSTOMER_READ` |
 | `GET /admin/customers/{customerId}/pricing` | ChatGPT SIWC admin | `PRICE_READ` |
+| `GET /admin/customers/{customerId}/billing` | ChatGPT SIWC admin | `BILLING_READ` |
+| `POST /admin/customers/{customerId}/billing-profile` | ChatGPT SIWC admin | `BILLING_WRITE` |
+| `POST /admin/customers/{customerId}/billing-notes` | ChatGPT SIWC admin | `BILLING_WRITE` |
 | `POST /admin/customers/{customerId}/pricing/preview` | ChatGPT SIWC admin | `PRICE_READ`; never persists |
 | `POST /admin/customers/{customerId}/price-overrides` | ChatGPT SIWC admin | `PRICE_WRITE` |
 | `POST /admin/customers/{customerId}/discounts` | ChatGPT SIWC admin | `DISCOUNT_WRITE` |
@@ -46,6 +49,7 @@ errors 500.
 | `GET/POST /admin/promotion-codes` | ChatGPT SIWC admin | `DISCOUNT_READ` / `DISCOUNT_WRITE` |
 | `GET/POST /admin/subscriptions` | ChatGPT SIWC admin | `SUBSCRIPTION_READ` / `SUBSCRIPTION_WRITE` |
 | `GET/PATCH /admin/subscriptions/{subscriptionId}` | ChatGPT SIWC admin | `SUBSCRIPTION_READ` / `SUBSCRIPTION_WRITE` |
+| `POST /admin/subscriptions/{subscriptionId}/operations` | ChatGPT SIWC admin | `SUBSCRIPTION_WRITE` |
 | `GET /admin/audit-events` | ChatGPT SIWC admin | `AUDIT_READ` |
 | `POST /admin/service-credentials` | ChatGPT SIWC admin | `ADMIN_USER_MANAGE` |
 | `POST /admin/service-credentials/{id}/rotate` | ChatGPT SIWC admin | `ADMIN_USER_MANAGE` |
@@ -59,6 +63,22 @@ errors 500.
 Agent DTOs contain only business profile, subscription validation,
 entitlements and link/provisioning fields. They exclude notes, negotiated
 pricing, discounts, audit history and identity secrets.
+
+## Billing operations
+
+The signed-in customer account includes its own billing contact, effective
+recurring terms, invoice history, derived payment state, renewal/cancellation
+date and effective entitlement state. Administrator billing detail additionally
+includes negotiated pricing and internal billing notes. Billing notes are never
+returned by customer, public or agent endpoints.
+
+The explicit subscription operation endpoint accepts `MARK_PAST_DUE`,
+`SUSPEND`, `RESUME`, `SCHEDULE_CANCELLATION`, `CANCEL_IMMEDIATELY`,
+`FINALIZE_CANCELLATION` and `EXTEND_SERVICE`. Relevant operations require
+`gracePeriodEndsAt`, `serviceExtendedUntil` or `reason`. Every command uses the
+subscription application service, optimistic version guard, idempotent REST
+boundary and immutable audit recorder; controllers do not implement lifecycle
+policy.
 
 ## Cursor pagination
 

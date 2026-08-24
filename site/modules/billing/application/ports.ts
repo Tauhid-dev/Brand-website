@@ -1,8 +1,12 @@
-import type { BillingAccount, Invoice, PaymentReminder } from "../domain/billing.ts";
+import type { BillingAccount, BillingNote, CustomerBillingProfile, Invoice, PaymentReminder } from "../domain/billing.ts";
 
 export interface BillingRepository {
   findAccount(customerId: string, provider: string): Promise<BillingAccount | null>;
   saveAccount(account: BillingAccount): Promise<void>;
+  findCustomerProfile(customerId: string): Promise<CustomerBillingProfile | null>;
+  saveCustomerProfile(profile: CustomerBillingProfile): Promise<void>;
+  saveBillingNote(note: BillingNote): Promise<void>;
+  listBillingNotes(customerId: string, limit: number): Promise<BillingNote[]>;
   findInvoiceById(id: string): Promise<Invoice | null>;
   findInvoiceByProviderReference(providerInvoiceId: string): Promise<Invoice | null>;
   listInvoiceHistory(customerId: string, limit: number): Promise<Invoice[]>;

@@ -1,12 +1,14 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { AppDatabase } from "../../../db/index.ts";
-import { billingAccounts, invoiceLines, invoices, paymentReminders } from "../../../db/schema.ts";
+import { billingAccounts, billingNotes, customerBillingProfiles, invoiceLines, invoices, paymentReminders } from "../../../db/schema.ts";
 import { Money } from "../../pricing/domain/money.ts";
 import { DomainConflictError } from "../../shared/domain/errors.ts";
-import { EntityId } from "../../shared/domain/value-objects.ts";
+import { EmailAddress, EntityId } from "../../shared/domain/value-objects.ts";
 import type { BillingRepository } from "../application/ports.ts";
 import {
   BillingAccount,
+  BillingNote,
+  CustomerBillingProfile,
   Invoice,
   InvoiceLine,
   PaymentReminder,
@@ -32,6 +34,37 @@ export class D1BillingRepository implements BillingRepository {
       providerCustomerId: value.providerCustomerId, status: value.status, currency: value.currency,
       createdAt: value.createdAt, updatedAt: value.updatedAt,
     }); } catch (error) { throw mapBillingConflict(error); }
+  }
+
+  async findCustomerProfile(customerId: string): Promise<CustomerBillingProfile | null> {
+    const [row] = await this.db.select().from(customerBillingProfiles).where(eq(customerBillingProfiles.customerId, customerId)).limit(1);
+    return row ? mapCustomerProfile(row) : null;
+  }
+  async saveCustomerProfile(profile: CustomerBillingProfile): Promise<void> {
+    const value = profile.props;
+    try {
+      await this.db.insert(customerBillingProfiles).values({
+        id: value.id.value, customerId: value.customerId.value, contactName: value.contactName,
+        contactEmail: value.contactEmail.value, contactPhone: value.contactPhone,
+        createdAt: value.createdAt, updatedAt: value.updatedAt,
+      }).onConflictDoUpdate({
+        target: customerBillingProfiles.customerId,
+        set: { contactName: value.contactName, contactEmail: value.contactEmail.value, contactPhone: value.contactPhone, updatedAt: value.updatedAt },
+      });
+    } catch (error) { throw mapBillingConflict(error); }
+  }
+  async saveBillingNote(note: BillingNote): Promise<void> {
+    const value = note.props;
+    try { await this.db.insert(billingNotes).values({
+      id: value.id.value, customerId: value.customerId.value,
+      subscriptionId: value.subscriptionId?.value ?? null, invoiceId: value.invoiceId?.value ?? null,
+      body: value.body, authorAdminUserId: value.authorAdminUserId.value, createdAt: value.createdAt,
+    }); } catch (error) { throw mapBillingConflict(error); }
+  }
+  async listBillingNotes(customerId: string, limit: number): Promise<BillingNote[]> {
+    const rows = await this.db.select().from(billingNotes).where(eq(billingNotes.customerId, customerId))
+      .orderBy(desc(billingNotes.createdAt)).limit(Math.min(Math.max(limit, 1), 200));
+    return rows.map(mapBillingNote);
   }
 
   async findInvoiceById(id: string): Promise<Invoice | null> {
@@ -95,6 +128,22 @@ export class D1BillingRepository implements BillingRepository {
       lines: rows.map((line) => mapLine(line, row.currency)), createdAt: row.createdAt, updatedAt: row.updatedAt,
     });
   }
+}
+
+function mapCustomerProfile(row: typeof customerBillingProfiles.$inferSelect): CustomerBillingProfile {
+  return new CustomerBillingProfile({
+    id: new EntityId(row.id), customerId: new EntityId(row.customerId), contactName: row.contactName,
+    contactEmail: new EmailAddress(row.contactEmail), contactPhone: row.contactPhone,
+    createdAt: row.createdAt, updatedAt: row.updatedAt,
+  });
+}
+function mapBillingNote(row: typeof billingNotes.$inferSelect): BillingNote {
+  return new BillingNote({
+    id: new EntityId(row.id), customerId: new EntityId(row.customerId),
+    subscriptionId: row.subscriptionId ? new EntityId(row.subscriptionId) : null,
+    invoiceId: row.invoiceId ? new EntityId(row.invoiceId) : null, body: row.body,
+    authorAdminUserId: new EntityId(row.authorAdminUserId), createdAt: row.createdAt,
+  });
 }
 
 function mapAccount(row: typeof billingAccounts.$inferSelect): BillingAccount {

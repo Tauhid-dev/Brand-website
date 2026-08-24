@@ -102,3 +102,68 @@ webhook verifier authenticates the raw request before parsing and feeds a
 provider-neutral inbox/reconciliation service. Outbound payment execution
 remains disabled until a reviewed provider configuration is supplied; the
 application never substitutes a fake payment path.
+
+## Phase 11 — Billing operations and subscription lifecycle
+
+Status: complete (24 August 2026).
+
+Acceptance criteria: customer and administrator billing overviews expose plan,
+public/negotiated/effective price, discounts, invoice/payment state, current
+period, renewal/cancellation date, entitlement state and billing contact;
+invoices and reminders retain history; `PAST_DUE` grace, suspension, resumption,
+period-end cancellation, immediate cancellation, due cancellation finalisation
+and temporary service extension are explicit domain/application operations;
+entitlements close, restore or expire without deleting customer data; internal
+billing notes are append-only; protected UI and REST commands require existing
+billing/subscription permissions and explicit confirmation/idempotency; all
+commercial actions are audited; no raw card data is stored.
+
+## Phase 12 — Notifications and operational work queues
+
+Status: not started.
+
+Complete delivery orchestration for commercial notifications and reliable
+projections for pending customer action, pending internal action, billing
+attention and agent provisioning. Reuse the Phase 7 source aggregates, delivery
+records and queue primitives; do not couple delivery or queue policy to HTTP.
+
+## Phase 13 — REST API production hardening
+
+Status: not started.
+
+Harden the production REST surface with complete schemas, controlled filtering,
+pagination, idempotency coverage, authorization matrices, error contracts,
+compatibility policy and production-grade API tests.
+
+## Phase 14 — Agent platform integration
+
+Status: not started.
+
+Implement the reviewed external agent platform adapter behind the existing
+agent ports, including provisioning/update/suspend workflows, retries,
+idempotency, reconciliation, observability and safe credential handling.
+
+## Phase 15 — Stripe and billing-provider integration
+
+Status: not started.
+
+Implement reviewed outbound Stripe/customer/subscription/invoice operations
+behind the existing provider-neutral port. Preserve internal commercial state
+as authoritative, reconcile signed events idempotently and never store raw card
+data. Do not activate live payment execution without approved configuration.
+
+## Phase 16 — Production security, reliability and migration hardening
+
+Status: not started.
+
+Complete threat-led security controls, operational recovery, observability,
+data retention, concurrency and failure testing, migration rehearsal and
+production rollback evidence across the commercial platform.
+
+## Phase 17 — Final architecture and release readiness
+
+Status: not started.
+
+Verify bounded-context ownership, eliminate duplication, reconcile all
+documentation with implemented code, complete release evidence and publish a
+go/no-go readiness assessment without weakening the modular-monolith boundary.

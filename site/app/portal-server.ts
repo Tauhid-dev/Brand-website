@@ -7,6 +7,9 @@ import type { AdminPrincipal, CustomerPrincipal, PermissionCode } from "@/module
 import { D1AdminAccessRepository } from "@/modules/identity/infrastructure/d1-admin-access-repository";
 import { D1CustomerIdentityRepository } from "@/modules/customer/infrastructure/d1-customer-repositories";
 import { D1PortalReadRepository } from "@/modules/portal/infrastructure/d1-portal-read-repository";
+import { CustomerBillingOverviewService } from "@/modules/billing/application/billing-operations-services";
+import { D1BillingRepository } from "@/modules/billing/infrastructure/d1-billing-repository";
+import { D1SubscriptionRepository } from "@/modules/subscription/infrastructure/d1-subscription-repository";
 import { CryptoUuidGenerator, SystemClock } from "@/modules/shared/application/ports";
 import { RequestContextFactory, type RequestActor } from "@/modules/shared/application/request-context";
 import { AuthenticationRequiredError, AuthorizationDeniedError } from "@/modules/shared/domain/errors";
@@ -14,6 +17,11 @@ import { requireAdminSession, requireCustomerSession } from "./server-authorizat
 
 export async function portalReadRepository() {
   return new D1PortalReadRepository(await getDb());
+}
+
+export async function customerBillingOverview(customerId: string) {
+  const db = await getDb();
+  return new CustomerBillingOverviewService(new D1BillingRepository(db), new D1SubscriptionRepository(db), new SystemClock()).execute(customerId);
 }
 
 function auditFor(db: Awaited<ReturnType<typeof getDb>>, actor: RequestActor = { type: "ANONYMOUS" }) {

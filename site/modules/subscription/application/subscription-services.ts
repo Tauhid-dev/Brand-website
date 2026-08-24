@@ -14,6 +14,7 @@ import {
   SubscriptionEntitlement,
   SubscriptionPrice,
   subscriptionAllowsService,
+  subscriptionAllowsServiceAt,
   type CustomerEntitlements,
   type SubscriptionPricingSource,
   type SubscriptionStatus,
@@ -56,6 +57,7 @@ export class CreateSubscriptionService {
       status, billingInterval: input.billingInterval, currency: breakdown.currency,
       startedAt: status === "ACTIVE" || status === "TRIAL" ? now : null,
       currentPeriodStart: input.currentPeriodStart ?? null, currentPeriodEnd: input.currentPeriodEnd ?? null,
+      gracePeriodEndsAt: null, serviceExtendedUntil: null,
       cancelAt: null, cancelledAt: null, trialEndsAt: input.trialEndsAt ?? null,
       externalBillingProvider: input.externalBillingProvider ?? null,
       externalCustomerId: input.externalCustomerId ?? null,
@@ -83,9 +85,10 @@ export class SubscriptionLifecycleService {
     if (!current) throw new DomainConflictError("SUBSCRIPTION_NOT_FOUND", "Subscription does not exist.");
     const now = this.clock.now();
     const next = current.transition(to, now);
-    const closeEntitlementsAt = ["SUSPENDED", "CANCELLED", "EXPIRED"].includes(to) ? now : null;
+    let closeEntitlementsAt = ["SUSPENDED", "CANCELLED", "EXPIRED"].includes(to) ? now : null;
     let restored: SubscriptionEntitlement[] = [];
     if (!subscriptionAllowsService(current.props.status) && subscriptionAllowsService(to) && current.props.status === "SUSPENDED") {
+      closeEntitlementsAt = now;
       const definitions = await this.repository.findLatestEntitlementDefinitions(subscriptionId);
       restored = definitions.map((definition) => new SubscriptionEntitlement({
         id: new EntityId(this.ids.next()), subscriptionId: current.props.id,
@@ -95,16 +98,69 @@ export class SubscriptionLifecycleService {
       }));
     }
     await this.repository.saveTransition(next, closeEntitlementsAt, restored);
-    await this.audit.record({ action: AUDIT_ACTIONS.subscriptionChanged, entityType: "SUBSCRIPTION", entityId: subscriptionId, before: current.props, after: next.props });
+    await this.audit.record({ action: lifecycleAuditAction(current.props.status, to), entityType: "SUBSCRIPTION", entityId: subscriptionId, before: current.props, after: next.props });
     return next;
   }
 
   activate(id: string) { return this.transition(id, "ACTIVE"); }
-  markPastDue(id: string) { return this.transition(id, "PAST_DUE"); }
+  async markPastDue(id: string, gracePeriodEndsAt?: Date) {
+    if (!gracePeriodEndsAt) return this.transition(id, "PAST_DUE");
+    const current = await this.requireSubscription(id);
+    const next = current.markPastDue(gracePeriodEndsAt, this.clock.now());
+    await this.repository.saveTransition(next, null, []);
+    await this.audit.record({ action: AUDIT_ACTIONS.subscriptionPastDue, entityType: "SUBSCRIPTION", entityId: id, before: current.props, after: next.props });
+    return next;
+  }
   suspend(id: string) { return this.transition(id, "SUSPENDED"); }
   resume(id: string) { return this.transition(id, "ACTIVE"); }
   cancel(id: string) { return this.transition(id, "CANCELLED"); }
   expire(id: string) { return this.transition(id, "EXPIRED"); }
+
+  async scheduleCancellation(id: string) {
+    const current = await this.requireSubscription(id);
+    const next = current.scheduleCancellation(this.clock.now());
+    await this.repository.saveTransition(next, null, []);
+    await this.audit.record({ action: AUDIT_ACTIONS.subscriptionCancellationScheduled, entityType: "SUBSCRIPTION", entityId: id, before: current.props, after: next.props });
+    return next;
+  }
+
+  async finalizeCancellation(id: string) {
+    const current = await this.requireSubscription(id);
+    const now = this.clock.now();
+    if (current.props.status !== "CANCEL_AT_PERIOD_END" || !current.props.cancelAt || current.props.cancelAt > now) {
+      throw new DomainConflictError("CANCELLATION_NOT_DUE", "Scheduled cancellation cannot be finalized before the period end.");
+    }
+    const next = current.transition("CANCELLED", now);
+    await this.repository.saveTransition(next, now, []);
+    await this.audit.record({ action: AUDIT_ACTIONS.subscriptionCancelled, entityType: "SUBSCRIPTION", entityId: id, before: current.props, after: next.props });
+    return next;
+  }
+
+  async extendService(id: string, until: Date, reason: string) {
+    if (!reason.trim() || reason.trim().length > 500) throw new DomainValidationError("INVALID_SERVICE_EXTENSION_REASON", "A service extension reason is required.");
+    const current = await this.requireSubscription(id);
+    const now = this.clock.now();
+    const next = current.extendService(until, now);
+    let restored: SubscriptionEntitlement[] = [];
+    if (current.props.status === "SUSPENDED") {
+      const definitions = await this.repository.findLatestEntitlementDefinitions(id);
+      restored = definitions.map((definition) => new SubscriptionEntitlement({
+        id: new EntityId(this.ids.next()), subscriptionId: current.props.id,
+        offeringCode: new StableCode(definition.offeringCode), enabled: definition.enabled,
+        limitValue: definition.limitValue, limitUnit: definition.limitUnit,
+        effectiveRange: new EffectiveRange(now, until), createdAt: now, updatedAt: now,
+      }));
+    }
+    await this.repository.saveTransition(next, null, restored);
+    await this.audit.record({ action: AUDIT_ACTIONS.subscriptionServiceExtended, entityType: "SUBSCRIPTION", entityId: id, before: current.props, after: { ...next.props, reason: reason.trim() } });
+    return next;
+  }
+
+  private async requireSubscription(id: string) {
+    const subscription = await this.repository.findById(id);
+    if (!subscription) throw new DomainConflictError("SUBSCRIPTION_NOT_FOUND", "Subscription does not exist.");
+    return subscription;
+  }
 }
 
 export class ProviderSubscriptionReconciliationService {
@@ -117,9 +173,10 @@ export class ProviderSubscriptionReconciliationService {
     if (current.props.status === input.status && (input.periodStart == null || samePeriod)) return current;
     const now = this.clock.now();
     const next = current.reconcileProvider(input.status, input.periodStart, input.periodEnd, now);
-    const closeEntitlementsAt = ["SUSPENDED", "CANCELLED", "EXPIRED"].includes(input.status) ? now : null;
+    let closeEntitlementsAt = ["SUSPENDED", "CANCELLED", "EXPIRED"].includes(input.status) ? now : null;
     let restored: SubscriptionEntitlement[] = [];
     if (!subscriptionAllowsService(current.props.status) && subscriptionAllowsService(input.status) && current.props.status === "SUSPENDED") {
+      closeEntitlementsAt = now;
       const definitions = await this.repository.findLatestEntitlementDefinitions(current.props.id.value);
       restored = definitions.map((definition) => new SubscriptionEntitlement({ id: new EntityId(this.ids.next()), subscriptionId: current.props.id, offeringCode: new StableCode(definition.offeringCode), enabled: definition.enabled, limitValue: definition.limitValue, limitUnit: definition.limitUnit, effectiveRange: new EffectiveRange(now, null), createdAt: now, updatedAt: now }));
     }
@@ -164,8 +221,7 @@ export class EntitlementService {
     const subscription = await this.repository.findCurrentForCustomer(customerId) ??
       await this.repository.findLatestForCustomer(customerId);
     if (!subscription) return null;
-    const valid = subscriptionAllowsService(subscription.props.status) &&
-      (!subscription.props.currentPeriodEnd || subscription.props.currentPeriodEnd > at);
+    const valid = subscriptionAllowsServiceAt(subscription, at);
     const active = valid ? await this.repository.findEffectiveEntitlements(subscription.props.id.value, at) : [];
     const definitions = active.length > 0 ? active.map((item) => ({
       offeringCode: item.props.offeringCode.value, enabled: item.props.enabled,
@@ -173,7 +229,7 @@ export class EntitlementService {
     })) : await this.repository.findLatestEntitlementDefinitions(subscription.props.id.value);
     return Object.freeze({
       customerId, subscriptionId: subscription.props.id.value, subscriptionStatus: subscription.props.status,
-      planId: subscription.props.planId.value, validUntil: subscription.props.currentPeriodEnd?.toISOString() ?? null,
+      planId: subscription.props.planId.value, validUntil: latestDate(subscription.props.currentPeriodEnd, subscription.props.gracePeriodEndsAt, subscription.props.serviceExtendedUntil)?.toISOString() ?? null,
       valid,
       entitlements: Object.freeze(Object.fromEntries(definitions.map((definition) => [definition.offeringCode, Object.freeze({
         enabled: valid && definition.enabled, limitValue: valid && definition.enabled ? definition.limitValue : null,
@@ -194,6 +250,19 @@ export class EntitlementService {
   async validateSubscription(customerId: string): Promise<boolean> {
     return (await this.getEntitlements(customerId))?.valid ?? false;
   }
+}
+
+function lifecycleAuditAction(from: SubscriptionStatus, to: SubscriptionStatus): string {
+  if (to === "PAST_DUE") return AUDIT_ACTIONS.subscriptionPastDue;
+  if (to === "SUSPENDED") return AUDIT_ACTIONS.subscriptionSuspended;
+  if (to === "ACTIVE" && ["PAST_DUE", "SUSPENDED", "CANCEL_AT_PERIOD_END"].includes(from)) return AUDIT_ACTIONS.subscriptionResumed;
+  if (to === "CANCEL_AT_PERIOD_END") return AUDIT_ACTIONS.subscriptionCancellationScheduled;
+  if (to === "CANCELLED") return AUDIT_ACTIONS.subscriptionCancelled;
+  return AUDIT_ACTIONS.subscriptionChanged;
+}
+
+function latestDate(...dates: Array<Date | null>): Date | null {
+  return dates.reduce<Date | null>((latest, value) => !value || (latest && latest >= value) ? latest : value, null);
 }
 
 function contractedPrice(ids: IdGenerator, subscriptionId: EntityId, breakdown: PricingBreakdown, from: Date, source: SubscriptionPricingSource): SubscriptionPrice {
