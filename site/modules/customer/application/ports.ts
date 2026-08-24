@@ -20,11 +20,18 @@ export interface CustomerIdentityRepository {
 
 export interface CustomerInvitationRepository {
   findPendingByEmail(email: string): Promise<CustomerInvitation | null>;
+  findPendingByTokenHash(tokenHash: string): Promise<CustomerInvitation | null>;
   save(invitation: CustomerInvitation): Promise<void>;
+  accept(
+    invitation: CustomerInvitation,
+    identity: CustomerIdentity,
+    newCustomer?: { customer: Customer; profile: CustomerBusinessProfile },
+  ): Promise<void>;
 }
 
 export interface InvitationTokenPort {
   create(): Promise<{ rawToken: string; tokenHash: string }>;
+  hash(rawToken: string): Promise<string>;
 }
 
 export interface InvitationDeliveryPort {

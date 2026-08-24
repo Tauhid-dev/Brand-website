@@ -1,4 +1,6 @@
-import { DomainConflictError } from "../../shared/domain/errors.ts";
+import { DomainConflictError, DomainValidationError } from "../../shared/domain/errors.ts";
+import type { AuditRecorder } from "../../audit/application/ports.ts";
+import { AUDIT_ACTIONS } from "../../audit/domain/audit-event.ts";
 import { EmailAddress, EntityId } from "../../shared/domain/value-objects.ts";
 import type { Clock, IdGenerator } from "../../shared/application/ports.ts";
 import {
@@ -7,7 +9,11 @@ import {
   createCustomerNote,
   type CustomerCreationSource,
 } from "../domain/customer.ts";
-import { createCustomerIdentity, createCustomerInvitation } from "../domain/customer-access.ts";
+import {
+  acceptCustomerInvitation,
+  createCustomerIdentity,
+  createCustomerInvitation,
+} from "../domain/customer-access.ts";
 import type {
   CustomerIdentityRepository,
   CustomerInvitationRepository,
@@ -38,9 +44,13 @@ export class CreateCustomerService {
     private readonly customers: CustomerRepository,
     private readonly ids: IdGenerator,
     private readonly clock: Clock,
+    private readonly audit: AuditRecorder,
   ) {}
 
-  async execute(input: CreateCustomerInput): Promise<Customer> {
+  async build(input: CreateCustomerInput): Promise<{
+    customer: Customer;
+    profile: CustomerBusinessProfile;
+  }> {
     const email = new EmailAddress(input.email);
     if (await this.customers.findByExternalReference(input.externalReference.trim())) {
       throw new DomainConflictError("CUSTOMER_REFERENCE_EXISTS", "Customer reference already exists.");
@@ -83,7 +93,18 @@ export class CreateCustomerService {
       createdAt: now,
       updatedAt: now,
     });
+    return { customer, profile };
+  }
+
+  async execute(input: CreateCustomerInput): Promise<Customer> {
+    const { customer, profile } = await this.build(input);
     await this.customers.save(customer, profile);
+    await this.audit.record({
+      action: AUDIT_ACTIONS.customerCreated,
+      entityType: "CUSTOMER",
+      entityId: customer.snapshot.id.value,
+      after: customer.snapshot,
+    });
     return customer;
   }
 }
@@ -94,6 +115,7 @@ export class RegisterCustomerService {
     private readonly identities: CustomerIdentityRepository,
     private readonly ids: IdGenerator,
     private readonly clock: Clock,
+    private readonly audit: AuditRecorder,
   ) {}
 
   async execute(
@@ -103,14 +125,22 @@ export class RegisterCustomerService {
       throw new DomainConflictError("IDENTITY_EXISTS", "This identity is already registered.");
     }
     const customer = await this.createCustomer.execute({ ...input, creationSource: "SELF_REGISTRATION" });
-    await this.identities.save(createCustomerIdentity({
+    const identity = createCustomerIdentity({
       id: new EntityId(this.ids.next()),
       customerId: customer.snapshot.id,
       provider: input.provider,
       externalSubject: input.externalSubject,
       email: customer.snapshot.email,
+      acceptedInvitationId: null,
       createdAt: this.clock.now(),
-    }));
+    });
+    await this.identities.save(identity);
+    await this.audit.record({
+      action: AUDIT_ACTIONS.customerIdentityLinked,
+      entityType: "CUSTOMER_IDENTITY",
+      entityId: identity.id.value,
+      after: { customerId: customer.snapshot.id.value, provider: identity.provider, email: identity.email.value },
+    });
     return customer;
   }
 }
@@ -122,6 +152,7 @@ export class InviteCustomerService {
     private readonly delivery: InvitationDeliveryPort,
     private readonly ids: IdGenerator,
     private readonly clock: Clock,
+    private readonly audit: AuditRecorder,
   ) {}
 
   async execute(input: {
@@ -149,7 +180,94 @@ export class InviteCustomerService {
       createdAt: now,
     });
     await this.invitations.save(invitation);
+    await this.audit.record({
+      action: AUDIT_ACTIONS.customerInvited,
+      entityType: "CUSTOMER_INVITATION",
+      entityId: invitation.id.value,
+      after: {
+        customerId: invitation.customerId?.value ?? null,
+        email: invitation.email.value,
+        status: invitation.status,
+        expiresAt: invitation.expiresAt,
+      },
+    });
     await this.delivery.send({ email: email.value, rawToken: token.rawToken, expiresAt: invitation.expiresAt });
+  }
+}
+
+export class AcceptCustomerInvitationService {
+  constructor(
+    private readonly createCustomer: CreateCustomerService,
+    private readonly customers: CustomerRepository,
+    private readonly identities: CustomerIdentityRepository,
+    private readonly invitations: CustomerInvitationRepository,
+    private readonly tokens: InvitationTokenPort,
+    private readonly ids: IdGenerator,
+    private readonly clock: Clock,
+    private readonly audit: AuditRecorder,
+  ) {}
+
+  async execute(input: {
+    rawToken: string;
+    provider: string;
+    externalSubject: string;
+    authenticatedEmail: string;
+    customer?: Omit<CreateCustomerInput, "email" | "creationSource">;
+  }): Promise<Customer> {
+    const tokenHash = await this.tokens.hash(input.rawToken);
+    const invitation = await this.invitations.findPendingByTokenHash(tokenHash);
+    if (!invitation) throw new DomainConflictError("INVITATION_NOT_FOUND", "Invitation is invalid or has already been used.");
+    const authenticatedEmail = new EmailAddress(input.authenticatedEmail);
+    if (authenticatedEmail.value !== invitation.email.value) {
+      throw new DomainConflictError("INVITATION_EMAIL_MISMATCH", "Invitation belongs to another signed-in email.");
+    }
+    if (await this.identities.findByProviderSubject(input.provider, input.externalSubject)) {
+      throw new DomainConflictError("IDENTITY_EXISTS", "This identity is already registered.");
+    }
+    const acceptedAt = this.clock.now();
+    const accepted = acceptCustomerInvitation(invitation, acceptedAt);
+    let customer: Customer | null;
+    let newCustomer: { customer: Customer; profile: CustomerBusinessProfile } | undefined;
+    if (invitation.customerId) {
+      customer = await this.customers.findById(invitation.customerId.value);
+      if (!customer) throw new DomainConflictError("CUSTOMER_NOT_FOUND", "Invited customer does not exist.");
+    } else {
+      if (!input.customer) {
+        throw new DomainValidationError("INVITED_CUSTOMER_DETAILS_REQUIRED", "Customer details are required for an unbound invitation.");
+      }
+      newCustomer = await this.createCustomer.build({
+        ...input.customer,
+        email: authenticatedEmail.value,
+        creationSource: "INVITATION",
+      });
+      customer = newCustomer.customer;
+    }
+    const identity = createCustomerIdentity({
+      id: new EntityId(this.ids.next()),
+      customerId: customer.snapshot.id,
+      provider: input.provider,
+      externalSubject: input.externalSubject,
+      email: authenticatedEmail,
+      acceptedInvitationId: invitation.id,
+      createdAt: acceptedAt,
+    });
+    await this.invitations.accept(accepted, identity, newCustomer);
+    if (newCustomer) {
+      await this.audit.record({
+        action: AUDIT_ACTIONS.customerCreated,
+        entityType: "CUSTOMER",
+        entityId: customer.snapshot.id.value,
+        after: customer.snapshot,
+      });
+    }
+    await this.audit.record({
+      action: AUDIT_ACTIONS.customerInvitationAccepted,
+      entityType: "CUSTOMER_INVITATION",
+      entityId: invitation.id.value,
+      before: { status: invitation.status, customerId: invitation.customerId?.value ?? null },
+      after: { status: accepted.status, customerId: customer.snapshot.id.value, identityId: identity.id.value },
+    });
+    return customer;
   }
 }
 
@@ -158,6 +276,7 @@ export class AddCustomerNoteService {
     private readonly customers: CustomerRepository,
     private readonly ids: IdGenerator,
     private readonly clock: Clock,
+    private readonly audit: AuditRecorder,
   ) {}
 
   async execute(input: {
@@ -178,5 +297,11 @@ export class AddCustomerNoteService {
       authorId: input.authorId,
       createdAt: this.clock.now(),
     }));
+    await this.audit.record({
+      action: AUDIT_ACTIONS.customerNoteAdded,
+      entityType: "CUSTOMER",
+      entityId: customerId.value,
+      after: { authorType: input.authorType, authorId: input.authorId, noteAdded: true },
+    });
   }
 }

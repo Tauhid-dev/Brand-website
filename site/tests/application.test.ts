@@ -2,9 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { seedDevelopmentCatalogue } from "../db/seeds/development.ts";
 import type { CatalogueRepository } from "../modules/catalogue/application/ports.ts";
+import { CatalogueManagementService } from "../modules/catalogue/application/catalogue-services.ts";
 import type { Offering, Plan, PlanFeature } from "../modules/catalogue/domain/catalogue.ts";
 import {
   CreateCustomerService,
+  AcceptCustomerInvitationService,
   AddCustomerNoteService,
   InviteCustomerService,
   RegisterCustomerService,
@@ -18,6 +20,8 @@ import type { Customer, CustomerBusinessProfile, CustomerNote } from "../modules
 import type { CustomerIdentity, CustomerInvitation } from "../modules/customer/domain/customer-access.ts";
 import { DomainConflictError } from "../modules/shared/domain/errors.ts";
 import { RequestContextFactory, mapApplicationError } from "../modules/shared/presentation/api-primitives.ts";
+import { NOOP_AUDIT, RecordingAudit } from "./support/audit.ts";
+import { WebCryptoInvitationToken } from "../modules/customer/infrastructure/web-crypto-invitation-token.ts";
 
 const NOW = new Date("2026-08-23T00:00:00.000Z");
 
@@ -57,10 +61,20 @@ class MemoryIdentities implements CustomerIdentityRepository {
 
 class MemoryInvitations implements CustomerInvitationRepository {
   readonly values: CustomerInvitation[] = [];
+  readonly acceptedIdentities: CustomerIdentity[] = [];
   async findPendingByEmail(email: string) {
     return this.values.find((value) => value.email.value === email && value.status === "PENDING") ?? null;
   }
+  async findPendingByTokenHash(tokenHash: string) {
+    return this.values.find((value) => value.tokenHash === tokenHash && value.status === "PENDING") ?? null;
+  }
   async save(invitation: CustomerInvitation) { this.values.push(invitation); }
+  async accept(invitation: CustomerInvitation, identity: CustomerIdentity, newCustomer?: { customer: Customer; profile: CustomerBusinessProfile }) {
+    const index = this.values.findIndex((value) => value.id.value === invitation.id.value);
+    if (index >= 0) this.values[index] = invitation;
+    this.acceptedIdentities.push(identity);
+    void newCustomer;
+  }
 }
 
 class MemoryCatalogue implements CatalogueRepository {
@@ -80,7 +94,7 @@ function createService(customers = new MemoryCustomers(), ids = new SequenceIds(
   return {
     customers,
     ids,
-    service: new CreateCustomerService(customers, ids, { now: () => NOW }),
+    service: new CreateCustomerService(customers, ids, { now: () => NOW }, NOOP_AUDIT),
   };
 }
 
@@ -106,7 +120,7 @@ test("admin creation persists a customer and one business profile", async () => 
 test("internal notes require an existing customer", async () => {
   const context = createService();
   const customer = await context.service.execute({ ...CUSTOMER_INPUT, creationSource: "ADMIN" });
-  const notes = new AddCustomerNoteService(context.customers, context.ids, { now: () => NOW });
+  const notes = new AddCustomerNoteService(context.customers, context.ids, { now: () => NOW }, NOOP_AUDIT);
   await notes.execute({
     customerId: customer.snapshot.id.value,
     body: "Customer prefers weekday calls.",
@@ -130,6 +144,7 @@ test("self-registration records an external identity without coupling to HTTP", 
     identities,
     context.ids,
     { now: () => NOW },
+    NOOP_AUDIT,
   );
   const customer = await registration.execute({
     ...CUSTOMER_INPUT,
@@ -146,15 +161,71 @@ test("invitation service persists only a hash and passes the raw token to delive
   const deliveries: Array<{ email: string; rawToken: string }> = [];
   const service = new InviteCustomerService(
     repository,
-    { create: async () => ({ rawToken: "opaque-token", tokenHash: "sha256-hash" }) },
+    {
+      create: async () => ({ rawToken: "opaque-token", tokenHash: "sha256-hash" }),
+      hash: async () => "sha256-hash",
+    },
     { send: async (value) => { deliveries.push(value); } },
     new SequenceIds(),
     { now: () => NOW },
+    NOOP_AUDIT,
   );
   await service.execute({ email: "invitee@example.invalid", invitedBy: "admin-1" });
   assert.equal(repository.values[0]?.tokenHash, "sha256-hash");
   assert.equal(deliveries[0]?.rawToken, "opaque-token");
   assert.equal(deliveries[0]?.email, "invitee@example.invalid");
+});
+
+test("invitation acceptance binds the authenticated identity and prevents replay", async () => {
+  const context = createService();
+  const customer = await context.service.execute({ ...CUSTOMER_INPUT, creationSource: "ADMIN" });
+  const invitations = new MemoryInvitations();
+  const identities = new MemoryIdentities();
+  const tokens = {
+    create: async () => ({ rawToken: "opaque-token", tokenHash: "sha256-hash" }),
+    hash: async () => "sha256-hash",
+  };
+  await new InviteCustomerService(
+    invitations, tokens, { send: async () => undefined }, context.ids, { now: () => NOW }, NOOP_AUDIT,
+  ).execute({
+    email: CUSTOMER_INPUT.email,
+    invitedBy: "admin-1",
+    customerId: customer.snapshot.id.value,
+  });
+  const accepted = new AcceptCustomerInvitationService(
+    context.service,
+    context.customers,
+    identities,
+    invitations,
+    tokens,
+    context.ids,
+    { now: () => new Date("2026-08-23T01:00:00.000Z") },
+    NOOP_AUDIT,
+  );
+  const result = await accepted.execute({
+    rawToken: "opaque-token",
+    provider: "chatgpt-siwc",
+    externalSubject: "site-user-1",
+    authenticatedEmail: "casey@example.invalid",
+  });
+  assert.equal(result.snapshot.id.value, customer.snapshot.id.value);
+  assert.equal(invitations.values[0]?.status, "ACCEPTED");
+  assert.equal(invitations.acceptedIdentities[0]?.acceptedInvitationId?.value, invitations.values[0]?.id.value);
+  await assert.rejects(accepted.execute({
+    rawToken: "opaque-token",
+    provider: "chatgpt-siwc",
+    externalSubject: "site-user-2",
+    authenticatedEmail: "casey@example.invalid",
+  }), { code: "INVITATION_NOT_FOUND" });
+});
+
+test("invitation tokens use platform cryptography and store only a deterministic hash", async () => {
+  const tokens = new WebCryptoInvitationToken();
+  const created = await tokens.create();
+  assert.equal(created.rawToken.length >= 43, true);
+  assert.equal(created.tokenHash.length, 64);
+  assert.notEqual(created.rawToken, created.tokenHash);
+  assert.equal(await tokens.hash(created.rawToken), created.tokenHash);
 });
 
 test("development catalogue seed is deterministic and idempotent", async () => {
@@ -169,6 +240,18 @@ test("development catalogue seed is deterministic and idempotent", async () => {
     [...repository.features.values()].find((value) => value.limitUnit === "posts_per_month")?.limitValue,
     4,
   );
+});
+
+test("catalogue management records commercial changes through the audit boundary", async () => {
+  const repository = new MemoryCatalogue();
+  const audit = new RecordingAudit();
+  const service = new CatalogueManagementService(repository, new SequenceIds(), { now: () => NOW }, audit);
+  await service.createOffering({ code: "ai_receptionist", name: "AI Receptionist", category: "AI" });
+  await service.createPlan({ code: "growth_engine", name: "Growth Engine", featured: true });
+  await service.setPlanFeature({ planCode: "growth_engine", offeringCode: "ai_receptionist", included: true, limitValue: 500, limitUnit: "conversations_per_month" });
+  assert.deepEqual(audit.records.map((record) => record.action), [
+    "OFFERING_CREATED", "PLAN_CREATED", "PLAN_FEATURE_CHANGED",
+  ]);
 });
 
 test("API primitives carry request context and safely map application errors", () => {

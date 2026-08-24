@@ -1,6 +1,8 @@
 import type { PricingReferenceRepository } from "../../pricing/application/ports.ts";
 import { Money } from "../../pricing/domain/money.ts";
 import type { Clock, IdGenerator } from "../../shared/application/ports.ts";
+import type { AuditRecorder } from "../../audit/application/ports.ts";
+import { AUDIT_ACTIONS } from "../../audit/domain/audit-event.ts";
 import { DomainConflictError, DomainValidationError } from "../../shared/domain/errors.ts";
 import { EntityId } from "../../shared/domain/value-objects.ts";
 import type { SubscriptionRepository } from "../../subscription/application/ports.ts";
@@ -8,7 +10,7 @@ import { BillingAccount, Invoice, InvoiceLine, PaymentReminder, type InvoiceStat
 import type { BillingRepository } from "./ports.ts";
 
 export class LinkBillingAccountService {
-  constructor(private readonly repository: BillingRepository, private readonly references: PricingReferenceRepository, private readonly ids: IdGenerator, private readonly clock: Clock) {}
+  constructor(private readonly repository: BillingRepository, private readonly references: PricingReferenceRepository, private readonly ids: IdGenerator, private readonly clock: Clock, private readonly audit: AuditRecorder) {}
   async execute(input: { customerId: string; provider: string; providerCustomerId: string; currency: string }): Promise<BillingAccount> {
     if (!await this.references.customerExists(input.customerId)) throw new DomainConflictError("CUSTOMER_NOT_FOUND", "Customer does not exist.");
     if (await this.repository.findAccount(input.customerId, input.provider.toLowerCase())) throw new DomainConflictError("BILLING_ACCOUNT_EXISTS", "Customer already has an account for this billing provider.");
@@ -19,6 +21,7 @@ export class LinkBillingAccountService {
       createdAt: now, updatedAt: now,
     });
     await this.repository.saveAccount(account);
+    await this.audit.record({ action: AUDIT_ACTIONS.billingAccountLinked, entityType: "BILLING_ACCOUNT", entityId: account.props.id.value, after: account.props });
     return account;
   }
 }
@@ -27,6 +30,7 @@ export class CreateInvoiceService {
   constructor(
     private readonly repository: BillingRepository, private readonly subscriptions: SubscriptionRepository,
     private readonly references: PricingReferenceRepository, private readonly ids: IdGenerator, private readonly clock: Clock,
+    private readonly audit: AuditRecorder,
   ) {}
   async execute(input: {
     customerId: string; subscriptionId?: string | null; billingAccountId?: string | null;
@@ -62,18 +66,20 @@ export class CreateInvoiceService {
       issuedAt: null, dueAt: null, paidAt: null, lines, createdAt: now, updatedAt: now,
     });
     await this.repository.saveInvoice(invoice);
+    await this.audit.record({ action: AUDIT_ACTIONS.invoiceCreated, entityType: "INVOICE", entityId: invoice.props.id.value, after: invoice.props });
     return invoice;
   }
 }
 
 export class InvoiceLifecycleService {
-  constructor(private readonly repository: BillingRepository, private readonly clock: Clock) {}
+  constructor(private readonly repository: BillingRepository, private readonly clock: Clock, private readonly audit: AuditRecorder) {}
   async transition(invoiceId: string, to: InvoiceStatus, dueAt?: Date): Promise<Invoice> {
     const current = await this.repository.findInvoiceById(invoiceId);
     if (!current) throw new DomainConflictError("INVOICE_NOT_FOUND", "Invoice does not exist.");
     if (to === "OPEN" && (!dueAt || dueAt < this.clock.now())) throw new DomainValidationError("INVALID_INVOICE_DUE_DATE", "Open invoices require a due date that is not in the past.");
     const next = current.transition(to, this.clock.now(), dueAt);
     await this.repository.saveInvoiceTransition(next);
+    await this.audit.record({ action: AUDIT_ACTIONS.invoiceChanged, entityType: "INVOICE", entityId: invoiceId, before: current.props, after: next.props });
     return next;
   }
   issue(id: string, dueAt: Date) { return this.transition(id, "OPEN", dueAt); }
@@ -83,7 +89,7 @@ export class InvoiceLifecycleService {
 }
 
 export class SchedulePaymentReminderService {
-  constructor(private readonly repository: BillingRepository, private readonly ids: IdGenerator, private readonly clock: Clock) {}
+  constructor(private readonly repository: BillingRepository, private readonly ids: IdGenerator, private readonly clock: Clock, private readonly audit: AuditRecorder) {}
   async execute(input: { invoiceId: string; stage: PaymentReminderStage; scheduledFor: Date; idempotencyKey: string }): Promise<PaymentReminder> {
     const invoice = await this.repository.findInvoiceById(input.invoiceId);
     if (!invoice) throw new DomainConflictError("INVOICE_NOT_FOUND", "Invoice does not exist.");
@@ -96,12 +102,13 @@ export class SchedulePaymentReminderService {
       sentAt: null, failureCode: null, createdAt: now, updatedAt: now,
     });
     await this.repository.saveReminder(reminder);
+    await this.audit.record({ action: AUDIT_ACTIONS.paymentReminderScheduled, entityType: "PAYMENT_REMINDER", entityId: reminder.props.id.value, after: reminder.props });
     return reminder;
   }
 }
 
 export class RecordPaymentReminderOutcomeService {
-  constructor(private readonly repository: BillingRepository, private readonly clock: Clock) {}
+  constructor(private readonly repository: BillingRepository, private readonly clock: Clock, private readonly audit: AuditRecorder) {}
   async execute(current: PaymentReminder, outcome: { sent: true } | { sent: false; failureCode: string }): Promise<PaymentReminder> {
     if (current.props.status !== "SCHEDULED") throw new DomainConflictError("REMINDER_ALREADY_FINAL", "Payment reminder already has a final outcome.");
     const now = this.clock.now();
@@ -111,6 +118,7 @@ export class RecordPaymentReminderOutcomeService {
       updatedAt: now,
     });
     await this.repository.saveReminderOutcome(reminder);
+    await this.audit.record({ action: AUDIT_ACTIONS.paymentReminderUpdated, entityType: "PAYMENT_REMINDER", entityId: reminder.props.id.value, before: current.props, after: reminder.props });
     return reminder;
   }
 }

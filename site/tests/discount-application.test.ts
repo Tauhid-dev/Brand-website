@@ -19,6 +19,7 @@ import { AustralianGstPolicy } from "../modules/pricing/domain/tax-policy.ts";
 import { D1PricingRepository } from "../modules/pricing/infrastructure/d1-pricing-repository.ts";
 import { EntityId } from "../modules/shared/domain/value-objects.ts";
 import { repositoryDatabase } from "./support/sqlite-d1.ts";
+import { NOOP_AUDIT } from "./support/audit.ts";
 
 const NOW = new Date("2026-08-23T00:00:00.000Z");
 const CUSTOMER_ONE = "00000000-0000-4000-8000-000000000001";
@@ -54,7 +55,7 @@ function setup() {
 async function percentageDiscount(context: ReturnType<typeof setup>, input: {
   code: string; percentage?: number; duration?: "ONCE" | "REPEATING" | "FOREVER"; stackable?: boolean;
 }) {
-  return new CreateDiscountService(context.discounts, context.ids, context.clock).execute({
+  return new CreateDiscountService(context.discounts, context.ids, context.clock, NOOP_AUDIT).execute({
     code: input.code, name: input.code, discountType: "PERCENTAGE",
     percentOffBasisPoints: input.percentage ?? 2_000, durationType: input.duration ?? "FOREVER",
     startsAt: NOW, stackable: input.stackable ?? true, createdBy: "admin-1",
@@ -65,7 +66,7 @@ test("promotion validation normalises codes and enforces customer, plan, date, a
   const context = setup();
   const discount = await percentageDiscount(context, { code: "customer_welcome" });
   const promotion = await new CreatePromotionCodeService(
-    context.discounts, context.pricing, { next: () => "UNUSED" }, context.ids, context.clock,
+    context.discounts, context.pricing, { next: () => "UNUSED" }, context.ids, context.clock, NOOP_AUDIT,
   ).execute({
     discountId: discount.props.id.value, code: "welcome-20", customerId: CUSTOMER_ONE,
     planId: PLAN_ID, startsAt: NOW, firstPurchaseOnly: true,
@@ -90,7 +91,7 @@ test("promotion validation normalises codes and enforces customer, plan, date, a
     code: "FIRST_PURCHASE_REQUIRED",
   });
   await new CreatePromotionCodeService(
-    context.discounts, context.pricing, { next: () => "DISABLED20" }, context.ids, context.clock,
+    context.discounts, context.pricing, { next: () => "DISABLED20" }, context.ids, context.clock, NOOP_AUDIT,
   ).execute({ discountId: discount.props.id.value, startsAt: NOW, active: false });
   await assert.rejects(validate.execute({ code: "disabled20", customerId: CUSTOMER_ONE, planId: PLAN_ID }), {
     code: "PROMOTION_CODE_INELIGIBLE",
@@ -102,12 +103,12 @@ test("promotion claims are atomic, idempotent, and protected by database redempt
   const context = setup();
   const discount = await percentageDiscount(context, { code: "launch_offer" });
   await new CreatePromotionCodeService(
-    context.discounts, context.pricing, { next: () => "LAUNCH20" }, context.ids, context.clock,
+    context.discounts, context.pricing, { next: () => "LAUNCH20" }, context.ids, context.clock, NOOP_AUDIT,
   ).execute({ discountId: discount.props.id.value, startsAt: NOW, maxRedemptions: 1 });
   const validation = new ValidatePromotionCodeService(
     context.discounts, context.pricing, new PurchaseHistory(), context.clock,
   );
-  const redeem = new RedeemPromotionCodeService(validation, context.discounts, context.ids, context.clock);
+  const redeem = new RedeemPromotionCodeService(validation, context.discounts, context.ids, context.clock, NOOP_AUDIT);
   const input = {
     code: "launch20", customerId: CUSTOMER_ONE, planId: PLAN_ID,
     idempotencyKey: "checkout-1", appliedBy: "customer-1", currency: "AUD",
@@ -131,11 +132,11 @@ test("direct discounts feed the canonical pricing resolver before GST", async ()
     createdBy: "admin-1", createdAt: NOW,
   }), null);
   const percentage = await percentageDiscount(context, { code: "welcome_20", stackable: true });
-  const fixed = await new CreateDiscountService(context.discounts, context.ids, context.clock).execute({
+  const fixed = await new CreateDiscountService(context.discounts, context.ids, context.clock, NOOP_AUDIT).execute({
     code: "fixed_100", name: "Fixed $100", discountType: "FIXED_AMOUNT", amountOffMinor: 10_000,
     currency: "AUD", durationType: "FOREVER", startsAt: NOW, stackable: true, createdBy: "admin-1",
   });
-  const apply = new ApplyCustomerDiscountService(context.discounts, context.pricing, context.ids, context.clock);
+  const apply = new ApplyCustomerDiscountService(context.discounts, context.pricing, context.ids, context.clock, NOOP_AUDIT);
   await apply.execute({ customerId: CUSTOMER_ONE, discountId: percentage.props.id.value, effectiveFrom: NOW, source: "ADMIN", appliedBy: "admin-1", reason: "Launch concession" });
   await apply.execute({ customerId: CUSTOMER_ONE, discountId: fixed.props.id.value, effectiveFrom: NOW, source: "SALES", appliedBy: "sales-1", reason: "Signed proposal" });
 
@@ -154,11 +155,11 @@ test("once discounts stop resolving after their charge application is recorded",
   const context = setup();
   const discount = await percentageDiscount(context, { code: "once_only", duration: "ONCE" });
   const assignment = await new ApplyCustomerDiscountService(
-    context.discounts, context.pricing, context.ids, context.clock,
+    context.discounts, context.pricing, context.ids, context.clock, NOOP_AUDIT,
   ).execute({ customerId: CUSTOMER_ONE, discountId: discount.props.id.value, effectiveFrom: NOW, source: "SYSTEM", appliedBy: "system", reason: "First charge credit" });
   const adapter = new DiscountPricingAdapter(context.discounts);
   assert.equal((await adapter.resolve({ customerId: CUSTOMER_ONE, planId: PLAN_ID, effectiveAt: NOW, charge: new Money(10_000, "AUD") })).total.amountMinor, 2_000);
-  const record = new RecordDiscountApplicationService(context.discounts, context.ids, context.clock);
+  const record = new RecordDiscountApplicationService(context.discounts, context.ids, context.clock, NOOP_AUDIT);
   const input = {
     discountId: discount.props.id.value, customerDiscountId: assignment.props.id.value,
     customerId: CUSTOMER_ONE, planId: PLAN_ID, idempotencyKey: "invoice-1-once",

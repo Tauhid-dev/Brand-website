@@ -1,32 +1,11 @@
-import type { Clock, IdGenerator } from "../application/ports.ts";
-import { DomainConflictError, DomainValidationError } from "../domain/errors.ts";
-
-export type RequestActor =
-  | { type: "ANONYMOUS" }
-  | { type: "CUSTOMER" | "ADMIN" | "SERVICE" | "SYSTEM"; id: string };
-
-export type RequestContext = {
-  requestId: string;
-  occurredAt: Date;
-  actor: RequestActor;
-  idempotencyKey: string | null;
-};
-
-export class RequestContextFactory {
-  constructor(
-    private readonly ids: IdGenerator,
-    private readonly clock: Clock,
-  ) {}
-
-  create(input: { actor?: RequestActor; idempotencyKey?: string | null } = {}): RequestContext {
-    return {
-      requestId: this.ids.next(),
-      occurredAt: this.clock.now(),
-      actor: input.actor ?? { type: "ANONYMOUS" },
-      idempotencyKey: input.idempotencyKey?.trim() || null,
-    };
-  }
-}
+import {
+  AuthenticationRequiredError,
+  AuthorizationDeniedError,
+  DomainConflictError,
+  DomainValidationError,
+} from "../domain/errors.ts";
+export { RequestContextFactory } from "../application/request-context.ts";
+export type { RequestActor, RequestContext } from "../application/request-context.ts";
 
 export type ApiProblem = {
   status: number;
@@ -40,6 +19,12 @@ export type ApiProblem = {
 };
 
 export function mapApplicationError(error: unknown, requestId: string): ApiProblem {
+  if (error instanceof AuthenticationRequiredError) {
+    return problem(401, error.code, error.message, requestId);
+  }
+  if (error instanceof AuthorizationDeniedError) {
+    return problem(403, error.code, error.message, requestId);
+  }
   if (error instanceof DomainValidationError) {
     return problem(400, error.code, error.message, requestId);
   }
