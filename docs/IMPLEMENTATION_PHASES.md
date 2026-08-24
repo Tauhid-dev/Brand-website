@@ -67,8 +67,17 @@ never mutates source lifecycle state.
 
 ## Phase 8 — Customer account and internal admin portal
 
-Customer dashboard plus protected admin dashboard/customer/catalogue/pricing/
-discount/subscription/billing/agent/audit views with safe confirmations.
+Status: complete (24 August 2026).
+
+Dispatch-owned Sign in with ChatGPT protects a customer-scoped account and
+server-authorized administration workspace. Customer views cover onboarding,
+integrations, subscriptions, entitlements, billing, agents and notification
+preferences without exposing internal notes. Admin views cover operational
+queues, customer search/detail, catalogue, pricing, discounts, subscriptions,
+billing, agent provisioning, audit history and access settings. Commercial
+mutations use application services, permission checks, explicit confirmation
+and immutable audit recording. Phase 8 adds no schema migration and deliberately
+does not introduce the Phase 9 `/api/v1` boundary.
 
 ## Phase 9 — Versioned REST and agent boundary
 
