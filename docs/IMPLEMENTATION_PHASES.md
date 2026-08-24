@@ -57,9 +57,13 @@ custom cryptography.
 
 ## Phase 7 — Onboarding, integrations and operational queues
 
+Status: complete (24 August 2026).
+
 Separate onboarding cases/tasks, customer integration health, notification
 infrastructure and queues for customer action, internal action, billing
-attention and agent provisioning.
+attention and agent provisioning. Source aggregates and their queue projections
+are transactionally persisted where Phase 7 owns both records; queue completion
+never mutates source lifecycle state.
 
 ## Phase 8 — Customer account and internal admin portal
 

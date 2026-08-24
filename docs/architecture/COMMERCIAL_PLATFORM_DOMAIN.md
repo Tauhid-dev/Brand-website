@@ -139,10 +139,13 @@ no application session or password table is required.
 
 ### Onboarding and integrations
 
+Phase 7 implements this separate lifecycle and its operational projections.
+
 | Table | Purpose and important constraints/indexes |
 | --- | --- |
 | `onboarding_cases` | Separate onboarding aggregate and lifecycle; indexed by customer/status |
 | `onboarding_tasks` | Customer/internal tasks, status, due date and ordering; indexed by case/owner/status |
+| `onboarding_task_dependencies` | Same-case dependency graph with self/cycle protection |
 | `customer_integrations` | Provider/category/status/last check; unique active `(customer_id, integration_code)` |
 
 ### Catalogue and pricing
@@ -181,9 +184,8 @@ customer, plan, effective dates, first purchase and redemption limits. Discount
 definitions use lowercase stable codes, percentage basis points or fixed minor
 units, `ONCE`/`REPEATING`/`FOREVER` duration and an explicit stacking flag.
 Claims and charge applications are append-only, idempotent redemption events.
-The optional subscription scope on customer discounts remains deferred until
-Phase 5 creates the referenced subscription aggregate; no placeholder foreign
-key or unvalidated identifier is stored.
+The optional subscription scope on customer discounts is now a validated Phase
+5 foreign key with database checks that prevent cross-customer assignments.
 
 ### Subscription, billing and service access
 
@@ -202,6 +204,8 @@ later adapters.
 | `payment_reminders` | Scheduled/sent/failed reminder history; unique idempotency scope per invoice/stage |
 
 ### Operations, agents and cross-cutting infrastructure
+
+Phase 7 implements the agent, queue and notification tables in this group.
 
 | Table | Purpose and important constraints/indexes |
 | --- | --- |
@@ -259,6 +263,8 @@ customer/catalogue foundations. Phase 3 adds pricing and Phase 4 adds promotion
 persistence. Phase 5 adds subscription and billing records and extends customer
 discounts with a validated subscription foreign key. Phase 6 adds admin/RBAC/
 audit persistence and links a consumed invitation to one customer identity.
-Subsequent phases add owned tables. Applied migrations are never renamed or rewritten. Every migration
-receives clean-install and upgrade validation. Phase 1 intentionally has no
-migration because the target schema is not yet implemented.
+Phase 7 adds onboarding, integration, agent provisioning, operational queue and
+notification persistence. Subsequent phases add their owned tables. Applied
+migrations are never renamed or rewritten. Every migration receives
+clean-install and upgrade validation. Phase 1 intentionally has no migration
+because the target schema is not yet implemented.
