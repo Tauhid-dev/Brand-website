@@ -20,14 +20,15 @@ export const openApiDocument = {
   info: {
     title: "Zuno Pixel API",
     version: "1.0.0",
-    description: "Purpose-specific public, customer, administration and agent-integration contracts. Money uses integer minor units and timestamps use ISO 8601.",
+    description: "Purpose-specific public, customer, administration, agent-integration and configured billing-webhook contracts. Money uses integer minor units and timestamps use ISO 8601.",
   },
   servers: [{ url: "/api/v1" }],
-  tags: [{ name: "Public" }, { name: "Customer" }, { name: "Admin" }, { name: "Agent integration" }],
+  tags: [{ name: "Public" }, { name: "Customer" }, { name: "Admin" }, { name: "Agent integration" }, { name: "Billing webhooks" }],
   components: {
     securitySchemes: {
       ChatGPTSession: { type: "apiKey", in: "cookie", name: "dispatch-owned-siwc", description: "Dispatch-owned Sign in with ChatGPT session." },
       ServiceBearer: { type: "http", scheme: "bearer", bearerFormat: "credential-id.secret" },
+      StripeSignature: { type: "apiKey", in: "header", name: "Stripe-Signature", description: "Stripe timestamped HMAC signature over the unmodified request body." },
     },
     schemas: {
       Error: { type: "object", required: ["error"], properties: { error: { type: "object", required: ["code", "message", "requestId"], properties: { code: { type: "string" }, message: { type: "string" }, requestId: { type: "string", format: "uuid" } } } } },
@@ -62,5 +63,6 @@ export const openApiDocument = {
     "/integrations/agent/customers/{customerId}/entitlements": serviceGet("Validate subscription and get entitlements", ["subscription:validate", "entitlement:read"]),
     "/integrations/agent/customers/{customerId}/bootstrap": serviceGet("Build an agent bootstrap profile", ["customer:read", "subscription:validate", "entitlement:read"]),
     "/integrations/agent/customers/{customerId}/provisioning-jobs": { post: { tags: ["Agent integration"], security: serviceSecurity(["agent-link:write"]), summary: "Request agent provisioning", parameters: [idempotency], requestBody: body(["platform", "operation"]), responses: { "202": response("Provisioning job"), "429": response("Rate limited") } } },
+    "/webhooks/billing/{provider}": { post: { tags: ["Billing webhooks"], security: [{ StripeSignature: [] }], summary: "Verify, deduplicate and reconcile a configured billing-provider event", parameters: [{ name: "provider", in: "path", required: true, schema: { type: "string", enum: ["stripe"] } }], requestBody: body(), responses: { "200": response("Duplicate event acknowledged"), "202": response("Event accepted"), "400": response("Invalid event"), "401": response("Invalid signature"), "413": response("Payload too large"), "429": response("Retry not ready"), "503": response("Provider not configured") } } },
   },
 } as const;

@@ -30,16 +30,22 @@ This starter does not use `wrangler.jsonc`.
 
 ## Versioned API
 
-Phase 9 exposes purpose-specific JSON contracts under `/api/v1`:
+Phases 9–10 expose purpose-specific JSON contracts under `/api/v1`:
 
 - public plan and promotion validation endpoints;
 - signed-in customer account, entitlement and preference endpoints;
-- server-authorized administration endpoints for commercial records; and
-- scoped service-to-service agent integration endpoints.
+- server-authorized administration endpoints for commercial records;
+- scoped service-to-service agent integration endpoints; and
+- a configuration-gated, signature-verified billing webhook boundary.
 
 The machine-readable OpenAPI 3.1 contract is available at
 `/api/v1/openapi.json`. See `docs/api/REST_API_V1.md` for the endpoint inventory,
 authentication, pagination, idempotency and error conventions.
+
+Stripe webhook intake is enabled only when `STRIPE_WEBHOOK_SECRET` is present in
+the hosting environment. Keep that secret outside source control. Outbound
+payment execution is deliberately disabled until a reviewed provider adapter is
+configured; there is no fake payment fallback.
 
 ## Identity, sessions and authorization
 
@@ -124,11 +130,12 @@ actions tied to the current ChatGPT user. Leave public content anonymous.
 ## Database workflow
 
 Migrations `drizzle/0000_uneven_violations.sql` through
-`drizzle/0004_bored_red_ghost.sql` establish customer/catalogue,
-versioned pricing/quotes, discounts/promotions, and subscription/entitlement/
-billing plus identity/RBAC/audit persistence in order. Apply them through the Sites/Cloudflare
-environment for the target stage. Do not edit an applied migration; change
-`db/schema.ts` and generate the next forward-only migration.
+`drizzle/0007_regular_shadowcat.sql` establish customer/catalogue, versioned
+pricing/quotes, discounts/promotions, subscription/entitlement/billing,
+identity/RBAC/audit, onboarding/operations/notifications, API security and the
+billing-webhook/public-rate-limit hardening records in order. Apply them through
+the Sites/Cloudflare environment for the target stage. Do not edit an applied
+migration; change `db/schema.ts` and generate the next forward-only migration.
 
 Development fixtures include clearly fictional catalogue/customer examples and
 the four initial AUD price sets. They are exported separately from production

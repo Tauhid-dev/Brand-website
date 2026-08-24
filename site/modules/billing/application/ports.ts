@@ -4,6 +4,7 @@ export interface BillingRepository {
   findAccount(customerId: string, provider: string): Promise<BillingAccount | null>;
   saveAccount(account: BillingAccount): Promise<void>;
   findInvoiceById(id: string): Promise<Invoice | null>;
+  findInvoiceByProviderReference(providerInvoiceId: string): Promise<Invoice | null>;
   listInvoiceHistory(customerId: string, limit: number): Promise<Invoice[]>;
   saveInvoice(invoice: Invoice): Promise<void>;
   saveInvoiceTransition(invoice: Invoice): Promise<void>;

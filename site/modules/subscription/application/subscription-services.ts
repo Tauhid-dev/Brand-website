@@ -107,6 +107,28 @@ export class SubscriptionLifecycleService {
   expire(id: string) { return this.transition(id, "EXPIRED"); }
 }
 
+export class ProviderSubscriptionReconciliationService {
+  constructor(private readonly repository: SubscriptionRepository, private readonly ids: IdGenerator, private readonly clock: Clock, private readonly audit: AuditRecorder) {}
+
+  async execute(input: { provider: string; externalSubscriptionId: string; status: SubscriptionStatus; periodStart: Date | null; periodEnd: Date | null }) {
+    const current = await this.repository.findByProviderReference(input.provider, input.externalSubscriptionId);
+    if (!current) throw new DomainConflictError("SUBSCRIPTION_NOT_FOUND", "Provider subscription is not linked to an internal subscription.");
+    const samePeriod = current.props.currentPeriodStart?.getTime() === input.periodStart?.getTime() && current.props.currentPeriodEnd?.getTime() === input.periodEnd?.getTime();
+    if (current.props.status === input.status && (input.periodStart == null || samePeriod)) return current;
+    const now = this.clock.now();
+    const next = current.reconcileProvider(input.status, input.periodStart, input.periodEnd, now);
+    const closeEntitlementsAt = ["SUSPENDED", "CANCELLED", "EXPIRED"].includes(input.status) ? now : null;
+    let restored: SubscriptionEntitlement[] = [];
+    if (!subscriptionAllowsService(current.props.status) && subscriptionAllowsService(input.status) && current.props.status === "SUSPENDED") {
+      const definitions = await this.repository.findLatestEntitlementDefinitions(current.props.id.value);
+      restored = definitions.map((definition) => new SubscriptionEntitlement({ id: new EntityId(this.ids.next()), subscriptionId: current.props.id, offeringCode: new StableCode(definition.offeringCode), enabled: definition.enabled, limitValue: definition.limitValue, limitUnit: definition.limitUnit, effectiveRange: new EffectiveRange(now, null), createdAt: now, updatedAt: now }));
+    }
+    await this.repository.saveTransition(next, closeEntitlementsAt, restored);
+    await this.audit.record({ action: AUDIT_ACTIONS.subscriptionChanged, entityType: "SUBSCRIPTION", entityId: current.props.id.value, before: current.props, after: { ...next.props, reconciliationSource: input.provider } });
+    return next;
+  }
+}
+
 export class ScheduleSubscriptionPriceService {
   constructor(
     private readonly repository: SubscriptionRepository,

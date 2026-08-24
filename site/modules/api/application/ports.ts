@@ -7,6 +7,7 @@ export interface ApiSecurityRepository {
   findCredential(id: string): Promise<ServiceCredential | null>;
   markCredentialUsed(id: string, at: Date): Promise<void>;
   consumeRateLimit(credentialId: string, windowStartedAt: Date, at: Date): Promise<number>;
+  consumeRequestRateLimit(scope: string, subjectHash: string, windowStartedAt: Date, at: Date): Promise<number>;
   claimIdempotency(record: IdempotencyRecord): Promise<IdempotencyRecord>;
   completeIdempotency(id: string, status: number, body: unknown, at: Date): Promise<void>;
   releaseIdempotency(id: string): Promise<void>;

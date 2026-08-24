@@ -1,8 +1,8 @@
 # Zuno Pixel commercial platform domain and database design
 
-Status: target design approved for phased implementation. Phases 2–9 implement
-the commercial domain, operational portal and versioned integration boundary;
-the billing-provider adapter and launch hardening remain later work.
+Status: target design implemented through Phase 10. Phases 2–9 implement the
+commercial domain, operational portal and versioned integration boundary;
+Phase 10 adds the configured billing-webhook adapter and launch hardening.
 
 ## Architecture decision
 
@@ -65,8 +65,9 @@ audited transition.
 
 Billing status is not customer status. Invoices use `DRAFT`, `OPEN`, `PAID`,
 `VOID`, `UNCOLLECTIBLE`; payment attention and reminders derive from invoice and
-subscription facts. Provider webhooks will enter through an authenticated,
-idempotent adapter in a later phase.
+subscription facts. Provider webhooks enter through a signature-authenticated,
+idempotent inbox. The adapter stores only a minimised normalized event and its
+payload hash, then invokes reusable invoice/subscription reconciliation services.
 
 ## Aggregate roots and application services
 
@@ -188,9 +189,9 @@ The optional subscription scope on customer discounts is now a validated Phase
 
 ### Subscription, billing and service access
 
-Phase 5 implements all seven tables in this group. These records do not perform
-payments or send notifications; they provide durable provider-neutral state for
-later adapters.
+Phase 5 implements the seven commercial record tables in this group. Phase 10
+adds the provider-neutral webhook inbox; none of these records performs payment
+execution or sends notifications from an HTTP controller.
 
 | Table | Purpose and important constraints/indexes |
 | --- | --- |
@@ -201,6 +202,7 @@ later adapters.
 | `invoices` | Provider-neutral invoice header, integer totals and status; unique provider invoice reference |
 | `invoice_lines` | Immutable description, quantity and minor-unit totals |
 | `payment_reminders` | Scheduled/sent/failed reminder history; unique idempotency scope per invoice/stage |
+| `billing_webhook_events` | Phase 10 provider/event deduplication, payload hash, minimised normalized data, retry state and terminal processing evidence |
 
 ### Operations, agents and cross-cutting infrastructure
 
@@ -219,6 +221,7 @@ Phase 7 implements the agent, queue and notification tables in this group.
 | `idempotency_keys` | Phase 9 scoped request hash and stored non-secret outcome with expiry; unique `(scope, key)` and immutable completed outcomes |
 | `service_credentials` | Phase 9 separately issued service identity with SHA-256 secret hash, scopes, expiry, rotation lineage and terminal revocation; raw tokens are never persisted |
 | `service_rate_limits` | Phase 9 durable per-credential fixed-window counters for the service boundary |
+| `api_rate_limits` | Phase 10 hash-only durable fixed-window counters for anonymous/public endpoints |
 
 ## Relationship summary
 
@@ -231,6 +234,9 @@ Phase 7 implements the agent, queue and notification tables in this group.
   plan ownership at the database boundary.
 - Subscription 1—many price versions and entitlement snapshots.
 - Customer 1—many billing accounts/invoices; Invoice 1—many lines/reminders.
+- Provider webhook identity is unique by `(provider, provider_event_id)` and
+  references invoices/subscriptions only through repository-owned provider
+  references; the webhook table deliberately stores no raw request body.
 - Customer 1—many agent links/provisioning jobs and operational queue items.
 
 ## Operational queue policy
@@ -256,6 +262,11 @@ service notices, retries, provider IDs and audit correlation remain explicit.
 - every commercial mutation carries actor/request context into append-only audit;
 - retention removes or anonymises eligible personal data without destroying
   legally required commercial history.
+- webhook signatures are verified against the untouched bounded body before
+  JSON parsing; secrets, signatures and raw provider payloads are never stored;
+- write requests carrying an `Origin` must be same-origin, public endpoints use
+  durable hash-only limits, and worker responses apply restrictive browser
+  security headers without permissive credentialed CORS.
 
 ## Migration strategy
 
@@ -266,7 +277,8 @@ discounts with a validated subscription foreign key. Phase 6 adds admin/RBAC/
 audit persistence and links a consumed invitation to one customer identity.
 Phase 7 adds onboarding, integration, agent provisioning, operational queue and
 notification persistence. Phase 9 adds API idempotency, service credential and
-service rate-limit persistence. Subsequent phases add only their owned tables. Applied
-migrations are never renamed or rewritten. Every migration receives
+service rate-limit persistence. Phase 10 adds the billing webhook inbox and
+anonymous API rate limits, plus forward guards for provider reconciliation.
+Applied migrations are never renamed or rewritten. Every migration receives
 clean-install and upgrade validation. Phase 1 intentionally has no migration
-because the target schema is not yet implemented.
+because the target schema was not yet implemented.

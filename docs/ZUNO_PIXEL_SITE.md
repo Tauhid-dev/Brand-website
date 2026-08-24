@@ -114,6 +114,11 @@ the hosting environment, never in source control.
 Rollback means redeploying the previous known-good saved version. The audit
 form remains non-delivering until its external adapter is configured.
 
+The detailed Phase 10 release gate, billing-webhook activation, monitoring,
+retention, migration failure and application rollback procedure is in
+`docs/operations/LAUNCH_AND_ROLLBACK.md`. Migration 0007 is forward-only and is
+left in place during an application rollback so webhook evidence is preserved.
+
 ## Asset replacement
 
 The current design uses CSS-driven product visuals and one generated social
@@ -145,12 +150,17 @@ Keep the CSS visual as a fallback when photography is unavailable.
 - [ ] Configure Search Console.
 - [ ] Validate sitemap, robots and canonical URLs.
 - [ ] Validate structured data.
-- [ ] Run automated and manual accessibility checks.
+- [x] Run automated structural and local-browser accessibility checks.
 - [ ] Run production Lighthouse tests.
 - [ ] Verify mobile, tablet and desktop layouts.
-- [ ] Verify keyboard-only navigation and form operation.
-- [ ] Verify every internal and external link.
+- [x] Verify keyboard-accessible navigation/form structure and required-field operation.
+- [x] Verify every homepage internal link in the production worker build.
 - [ ] Configure and verify social profiles.
 - [ ] Obtain legal approval for privacy, terms and AI/data content.
 - [ ] Confirm WhatsApp pricing and usage disclosures.
 - [ ] Confirm no fabricated proof, rankings, ratings or customer claims remain.
+
+Phase 10 also verifies production security headers, absence of permissive CORS,
+same-origin write enforcement, bounded request bodies and HTML/JS/CSS launch
+budgets. Lighthouse and the remaining device/legal/integration items stay open
+because they require the final deployment environment or stakeholder approval.

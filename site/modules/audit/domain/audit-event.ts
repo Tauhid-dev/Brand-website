@@ -61,6 +61,10 @@ export const AUDIT_ACTIONS = {
   serviceCredentialRevoked: "SERVICE_CREDENTIAL_REVOKED",
   serviceAuthenticationFailed: "SERVICE_AUTHENTICATION_FAILED",
   serviceApiRequested: "SERVICE_API_REQUESTED",
+  billingWebhookReceived: "BILLING_WEBHOOK_RECEIVED",
+  billingWebhookProcessed: "BILLING_WEBHOOK_PROCESSED",
+  billingWebhookIgnored: "BILLING_WEBHOOK_IGNORED",
+  billingWebhookFailed: "BILLING_WEBHOOK_FAILED",
 } as const;
 
 export type AuditJson = null | boolean | number | string | AuditJson[] | { [key: string]: AuditJson };

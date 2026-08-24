@@ -3,13 +3,13 @@ import type { CursorPosition } from "../../../modules/api/application/read-ports
 import { IdempotencyService, sha256 } from "../../../modules/api/application/api-security-services.ts";
 import type { ApiSecurityRepository } from "../../../modules/api/application/ports.ts";
 import type { Clock, IdGenerator } from "../../../modules/shared/application/ports.ts";
-import { DomainValidationError } from "../../../modules/shared/domain/errors.ts";
+import { AuthorizationDeniedError, DomainValidationError, PayloadTooLargeError } from "../../../modules/shared/domain/errors.ts";
 
 export type ApiRequestContext = { requestId: string; request: Request };
 
 export async function apiRoute(request: Request, handler: (context: ApiRequestContext) => Promise<Response>) {
   const requestId = crypto.randomUUID();
-  try { const response = await handler({ requestId, request }); response.headers.set("x-request-id", requestId); return response; }
+  try { enforceSameOriginWrite(request); const response = await handler({ requestId, request }); response.headers.set("x-request-id", requestId); return response; }
   catch (error) { return applicationErrorResponse(error, requestId); }
 }
 
@@ -18,9 +18,17 @@ export function pageResponse(items: unknown[], next: CursorPosition | null) { re
 
 export async function jsonObject(request: Request) {
   let value: unknown;
-  try { value = await request.json(); } catch { throw new DomainValidationError("INVALID_JSON", "Request body must be valid JSON."); }
+  try { value = JSON.parse(await readBoundedText(request)); } catch (error) { if (error instanceof PayloadTooLargeError) throw error; throw new DomainValidationError("INVALID_JSON", "Request body must be valid JSON."); }
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new DomainValidationError("INVALID_JSON_OBJECT", "Request body must be a JSON object.");
   return value as Record<string, unknown>;
+}
+
+export async function readBoundedText(request: Request, maxBytes = 32_768): Promise<string> {
+  const declared = request.headers.get("content-length");
+  if (declared && (!/^\d+$/.test(declared) || Number(declared) > maxBytes)) throw new PayloadTooLargeError();
+  const bytes = await request.arrayBuffer();
+  if (bytes.byteLength > maxBytes) throw new PayloadTooLargeError();
+  return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
 }
 
 export async function idempotentResponse(input: { request: Request; requestId: string; scope: string; body: unknown; repository: ApiSecurityRepository; ids: IdGenerator; clock: Clock; execute: () => Promise<Response> }) {
@@ -57,3 +65,4 @@ export function decodeCursor(value: string | null): CursorPosition | null { if (
 function parseLimit(value: string | null) { const parsed = value == null ? 25 : Number(value); if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > 100) throw new DomainValidationError("INVALID_PAGE_LIMIT", "limit must be from 1 to 100."); return parsed; }
 function canonicalJson(value: unknown): string { if (value == null || typeof value !== "object") return JSON.stringify(value); if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`; return `{${Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b)).map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`).join(",")}}`; }
 function applicationErrorResponse(error: unknown, requestId: string) { const problem = mapApplicationError(error, requestId); return Response.json(problem.body, { status: problem.status, headers: { "x-request-id": requestId, "cache-control": "no-store" } }); }
+function enforceSameOriginWrite(request: Request) { if (!["GET", "HEAD", "OPTIONS"].includes(request.method)) { const origin = request.headers.get("origin"); if (origin && origin !== new URL(request.url).origin) throw new AuthorizationDeniedError("CROSS_ORIGIN_WRITE_DENIED", "Cross-origin writes are not allowed."); } }
