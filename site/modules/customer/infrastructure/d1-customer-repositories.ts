@@ -135,6 +135,7 @@ export class D1CustomerIdentityRepository implements CustomerIdentityRepository 
       provider: row.provider,
       externalSubject: row.externalSubject,
       email: new EmailAddress(row.email),
+      acceptedInvitationId: row.acceptedInvitationId ? new EntityId(row.acceptedInvitationId) : null,
       createdAt: row.createdAt,
     } : null;
   }
@@ -146,6 +147,7 @@ export class D1CustomerIdentityRepository implements CustomerIdentityRepository 
       provider: identity.provider,
       externalSubject: identity.externalSubject,
       email: identity.email.value,
+      acceptedInvitationId: identity.acceptedInvitationId?.value ?? null,
       createdAt: identity.createdAt,
     });
   }
@@ -159,17 +161,15 @@ export class D1CustomerInvitationRepository implements CustomerInvitationReposit
       eq(customerInvitations.email, email),
       eq(customerInvitations.status, "PENDING"),
     )).limit(1);
-    return row ? {
-      id: new EntityId(row.id),
-      customerId: row.customerId ? new EntityId(row.customerId) : null,
-      email: new EmailAddress(row.email),
-      tokenHash: row.tokenHash,
-      status: row.status as InvitationStatus,
-      invitedBy: row.invitedBy,
-      expiresAt: row.expiresAt,
-      acceptedAt: row.acceptedAt,
-      createdAt: row.createdAt,
-    } : null;
+    return row ? mapInvitation(row) : null;
+  }
+
+  async findPendingByTokenHash(tokenHash: string): Promise<CustomerInvitation | null> {
+    const [row] = await this.db.select().from(customerInvitations).where(and(
+      eq(customerInvitations.tokenHash, tokenHash),
+      eq(customerInvitations.status, "PENDING"),
+    )).limit(1);
+    return row ? mapInvitation(row) : null;
   }
 
   async save(invitation: CustomerInvitation): Promise<void> {
@@ -185,6 +185,87 @@ export class D1CustomerInvitationRepository implements CustomerInvitationReposit
       createdAt: invitation.createdAt,
     });
   }
+
+  async accept(
+    invitation: CustomerInvitation,
+    identity: CustomerIdentity,
+    newCustomer?: { customer: Customer; profile: CustomerBusinessProfile },
+  ): Promise<void> {
+    const acceptance = [
+      this.db.update(customerInvitations).set({
+        customerId: identity.customerId.value,
+        status: invitation.status,
+        acceptedAt: invitation.acceptedAt,
+      }).where(and(
+        eq(customerInvitations.id, invitation.id.value),
+        eq(customerInvitations.status, "PENDING"),
+      )),
+      this.db.insert(customerIdentities).values({
+        id: identity.id.value,
+        customerId: identity.customerId.value,
+        provider: identity.provider,
+        externalSubject: identity.externalSubject,
+        email: identity.email.value,
+        acceptedInvitationId: invitation.id.value,
+        createdAt: identity.createdAt,
+      }),
+    ] as const;
+    if (!newCustomer) {
+      await this.db.batch(acceptance);
+      return;
+    }
+    const customer = newCustomer.customer.snapshot;
+    const profile = newCustomer.profile.props;
+    await this.db.batch([
+      this.db.insert(customers).values({
+        id: customer.id.value,
+        externalReference: customer.externalReference,
+        businessName: customer.businessName,
+        contactName: customer.contactName,
+        email: customer.email.value,
+        phone: customer.phone,
+        industry: customer.industry,
+        websiteUrl: customer.websiteUrl,
+        status: customer.status,
+        creationSource: customer.creationSource,
+        createdAt: customer.createdAt,
+        updatedAt: customer.updatedAt,
+      }),
+      this.db.insert(customerBusinessProfiles).values({
+        id: profile.id.value,
+        customerId: profile.customerId.value,
+        businessName: profile.businessName,
+        tradingName: profile.tradingName,
+        abn: profile.abn,
+        websiteUrl: profile.websiteUrl,
+        primaryEmail: profile.primaryEmail.value,
+        primaryPhone: profile.primaryPhone,
+        industry: profile.industry,
+        timezone: profile.timezone,
+        country: profile.country,
+        state: profile.state,
+        suburb: profile.suburb,
+        postcode: profile.postcode,
+        createdAt: profile.createdAt,
+        updatedAt: profile.updatedAt,
+      }),
+      ...acceptance,
+    ]);
+  }
+}
+
+function mapInvitation(row: typeof customerInvitations.$inferSelect): CustomerInvitation {
+  return {
+      id: new EntityId(row.id),
+      customerId: row.customerId ? new EntityId(row.customerId) : null,
+      email: new EmailAddress(row.email),
+      tokenHash: row.tokenHash,
+      status: row.status as InvitationStatus,
+      invitedBy: row.invitedBy,
+      expiresAt: row.expiresAt,
+      acceptedAt: row.acceptedAt,
+      createdAt: row.createdAt,
+  };
 }
 
 function mapCustomer(row: typeof customers.$inferSelect): Customer {

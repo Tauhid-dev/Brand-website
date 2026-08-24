@@ -3,6 +3,7 @@ import {
   check,
   index,
   integer,
+  primaryKey,
   sqliteTable,
   text,
   uniqueIndex,
@@ -80,23 +81,6 @@ export const customerNotes = sqliteTable(
   ],
 );
 
-export const customerIdentities = sqliteTable(
-  "customer_identities",
-  {
-    id: text("id").primaryKey(),
-    customerId: text("customer_id").notNull().references(() => customers.id, { onDelete: "cascade" }),
-    provider: text("provider").notNull(),
-    externalSubject: text("external_subject").notNull(),
-    email: text("email").notNull(),
-    createdAt: timestamp("created_at").notNull(),
-  },
-  (table) => [
-    uniqueIndex("customer_identities_provider_subject_uq").on(table.provider, table.externalSubject),
-    index("customer_identities_customer_idx").on(table.customerId),
-    index("customer_identities_email_idx").on(table.email),
-  ],
-);
-
 export const customerInvitations = sqliteTable(
   "customer_invitations",
   {
@@ -117,6 +101,25 @@ export const customerInvitations = sqliteTable(
     check("customer_invitations_status_check", sql`${table.status} in ('PENDING', 'ACCEPTED', 'EXPIRED', 'REVOKED')`),
     check("customer_invitations_expiry_check", sql`${table.expiresAt} > ${table.createdAt}`),
     check("customer_invitations_acceptance_check", sql`(${table.status} = 'ACCEPTED' and ${table.acceptedAt} is not null) or (${table.status} <> 'ACCEPTED' and ${table.acceptedAt} is null)`),
+  ],
+);
+
+export const customerIdentities = sqliteTable(
+  "customer_identities",
+  {
+    id: text("id").primaryKey(),
+    customerId: text("customer_id").notNull().references(() => customers.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull(),
+    externalSubject: text("external_subject").notNull(),
+    email: text("email").notNull(),
+    acceptedInvitationId: text("accepted_invitation_id").references(() => customerInvitations.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("customer_identities_provider_subject_uq").on(table.provider, table.externalSubject),
+    uniqueIndex("customer_identities_invitation_uq").on(table.acceptedInvitationId),
+    index("customer_identities_customer_idx").on(table.customerId),
+    index("customer_identities_email_idx").on(table.email),
   ],
 );
 
@@ -603,5 +606,116 @@ export const discountRedemptions = sqliteTable(
     check("discount_redemptions_type_check", sql`${table.redemptionType} in ('PROMOTION_CLAIM', 'CHARGE_APPLICATION')`),
     check("discount_redemptions_amount_check", sql`${table.amountDiscountedMinor} >= 0 and length(${table.currency}) = 3 and ${table.currency} = upper(${table.currency})`),
     check("discount_redemptions_claim_check", sql`(${table.redemptionType} = 'PROMOTION_CLAIM' and ${table.promotionCodeId} is not null and ${table.amountDiscountedMinor} = 0) or (${table.redemptionType} = 'CHARGE_APPLICATION' and ${table.amountDiscountedMinor} > 0)`),
+  ],
+);
+
+export const adminUsers = sqliteTable(
+  "admin_users",
+  {
+    id: text("id").primaryKey(),
+    identityProvider: text("identity_provider").notNull(),
+    externalSubject: text("external_subject").notNull(),
+    email: text("email").notNull(),
+    displayName: text("display_name").notNull(),
+    status: text("status").notNull(),
+    bootstrap: integer("bootstrap", { mode: "boolean" }).notNull().default(false),
+    lastLoginAt: timestamp("last_login_at"),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("admin_users_provider_subject_uq").on(table.identityProvider, table.externalSubject),
+    uniqueIndex("admin_users_email_uq").on(table.email),
+    uniqueIndex("admin_users_bootstrap_uq").on(table.bootstrap).where(sql`${table.bootstrap} = 1`),
+    index("admin_users_status_idx").on(table.status),
+    check("admin_users_status_check", sql`${table.status} in ('ACTIVE', 'SUSPENDED')`),
+    check("admin_users_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt}`),
+  ],
+);
+
+export const roles = sqliteTable(
+  "roles",
+  {
+    id: text("id").primaryKey(),
+    code: text("code").notNull(),
+    name: text("name").notNull(),
+    description: text("description").notNull(),
+    system: integer("system", { mode: "boolean" }).notNull().default(true),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("roles_code_uq").on(table.code),
+    check("roles_code_check", sql`${table.code} = upper(${table.code})`),
+    check("roles_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt}`),
+  ],
+);
+
+export const permissions = sqliteTable(
+  "permissions",
+  {
+    id: text("id").primaryKey(),
+    code: text("code").notNull(),
+    name: text("name").notNull(),
+    description: text("description").notNull(),
+    createdAt: timestamp("created_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("permissions_code_uq").on(table.code),
+    check("permissions_code_check", sql`${table.code} = upper(${table.code})`),
+  ],
+);
+
+export const adminUserRoles = sqliteTable(
+  "admin_user_roles",
+  {
+    adminUserId: text("admin_user_id").notNull().references(() => adminUsers.id, { onDelete: "cascade" }),
+    roleId: text("role_id").notNull().references(() => roles.id, { onDelete: "restrict" }),
+    assignedByAdminUserId: text("assigned_by_admin_user_id").references(() => adminUsers.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.adminUserId, table.roleId] }),
+    index("admin_user_roles_role_idx").on(table.roleId),
+  ],
+);
+
+export const rolePermissions = sqliteTable(
+  "role_permissions",
+  {
+    roleId: text("role_id").notNull().references(() => roles.id, { onDelete: "cascade" }),
+    permissionId: text("permission_id").notNull().references(() => permissions.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.roleId, table.permissionId] }),
+    index("role_permissions_permission_idx").on(table.permissionId),
+  ],
+);
+
+export const auditEvents = sqliteTable(
+  "audit_events",
+  {
+    id: text("id").primaryKey(),
+    actorType: text("actor_type").notNull(),
+    actorId: text("actor_id"),
+    action: text("action").notNull(),
+    entityType: text("entity_type").notNull(),
+    entityId: text("entity_id"),
+    beforeJson: text("before_json", { mode: "json" }).$type<unknown>(),
+    afterJson: text("after_json", { mode: "json" }).$type<unknown>(),
+    requestId: text("request_id").notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at").notNull(),
+  },
+  (table) => [
+    index("audit_events_entity_created_idx").on(table.entityType, table.entityId, table.createdAt),
+    index("audit_events_action_created_idx").on(table.action, table.createdAt),
+    index("audit_events_actor_created_idx").on(table.actorType, table.actorId, table.createdAt),
+    index("audit_events_created_at_idx").on(table.createdAt),
+    index("audit_events_request_idx").on(table.requestId),
+    check("audit_events_actor_type_check", sql`${table.actorType} in ('ANONYMOUS', 'CUSTOMER', 'ADMIN', 'SERVICE', 'SYSTEM')`),
+    check("audit_events_actor_id_check", sql`(${table.actorType} = 'ANONYMOUS' and ${table.actorId} is null) or (${table.actorType} <> 'ANONYMOUS' and ${table.actorId} is not null)`),
   ],
 );

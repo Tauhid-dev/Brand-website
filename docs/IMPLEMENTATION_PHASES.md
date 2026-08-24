@@ -49,6 +49,8 @@ provider-neutral billing port. Suspend/resume/cancel preserve customer data.
 
 ## Phase 6 — Identity, RBAC and immutable audit
 
+Status: complete (24 August 2026).
+
 Customer/admin identity decision, secure sessions, invitations, initial roles
 and permissions, server guards and commercially complete audit events. No
 custom cryptography.

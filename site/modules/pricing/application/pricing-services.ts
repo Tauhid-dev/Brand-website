@@ -1,4 +1,6 @@
 import type { Clock, IdGenerator } from "../../shared/application/ports.ts";
+import type { AuditRecorder } from "../../audit/application/ports.ts";
+import { AUDIT_ACTIONS } from "../../audit/domain/audit-event.ts";
 import { DomainConflictError, DomainValidationError } from "../../shared/domain/errors.ts";
 import { EntityId } from "../../shared/domain/value-objects.ts";
 import { EffectiveRange } from "../domain/effective-range.ts";
@@ -33,6 +35,7 @@ export class PublishPlanPriceService {
     private readonly references: PricingReferenceRepository,
     private readonly ids: IdGenerator,
     private readonly clock: Clock,
+    private readonly audit: AuditRecorder,
   ) {}
 
   async execute(input: PublishPlanPriceInput): Promise<PlanPrice> {
@@ -76,6 +79,13 @@ export class PublishPlanPriceService {
       createdAt: now,
     });
     await this.prices.publishPlanPrice(price, closable[0]?.props.id.value ?? null);
+    await this.audit.record({
+      action: AUDIT_ACTIONS.planPricePublished,
+      entityType: "PLAN_PRICE",
+      entityId: price.props.id.value,
+      before: closable[0]?.props ?? null,
+      after: price.props,
+    });
     return price;
   }
 }
@@ -99,6 +109,7 @@ export class CreatePriceOverrideService {
     private readonly references: PricingReferenceRepository,
     private readonly ids: IdGenerator,
     private readonly clock: Clock,
+    private readonly audit: AuditRecorder,
   ) {}
 
   async execute(input: CreatePriceOverrideInput): Promise<CustomerPriceOverride> {
@@ -156,6 +167,12 @@ export class CreatePriceOverrideService {
       updatedAt: now,
     });
     await this.prices.saveCustomerOverride(override);
+    await this.audit.record({
+      action: AUDIT_ACTIONS.customerPriceOverrideCreated,
+      entityType: "CUSTOMER_PRICE_OVERRIDE",
+      entityId: override.props.id.value,
+      after: override.props,
+    });
     return override;
   }
 }
@@ -303,6 +320,7 @@ export class CreatePriceQuoteService {
     private readonly references: PricingReferenceRepository,
     private readonly ids: IdGenerator,
     private readonly clock: Clock,
+    private readonly audit: AuditRecorder,
   ) {}
 
   async execute(input: {
@@ -341,6 +359,12 @@ export class CreatePriceQuoteService {
       createdAt,
     });
     await this.prices.saveQuote(quote);
+    await this.audit.record({
+      action: AUDIT_ACTIONS.priceQuoteCreated,
+      entityType: "PRICE_QUOTE",
+      entityId: quote.props.id.value,
+      after: quote.props,
+    });
     return quote;
   }
 }

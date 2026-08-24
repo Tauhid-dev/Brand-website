@@ -1,9 +1,9 @@
 # Zuno Pixel commercial platform domain and database design
 
-Status: target design approved for phased implementation. Phases 2–5 now
+Status: target design approved for phased implementation. Phases 2–6 now
 implement customer, catalogue, pricing, promotion, subscription, entitlement
-and provider-neutral billing foundations; later table groups remain target
-design.
+provider-neutral billing, external identity, RBAC and immutable audit
+foundations; later table groups remain target design.
 
 ## Architecture decision
 
@@ -110,13 +110,24 @@ commercial terms and plan-feature entitlements. Suspension/cancellation close
 entitlement ranges; resumption creates new ranges from the contracted snapshot.
 Billing-provider execution remains behind a port.
 
+Phase 6 adopts dispatch-owned Sign in with ChatGPT as the external browser
+identity/session provider for the hosted application. Zuno Pixel stores the
+stable Site-scoped provider subject and never stores a password, OAuth token or
+session cookie. Customer identities map to customer accounts; separately
+provisioned admin identities resolve database roles and permissions through
+server-side guards. Invitation tokens use Web Crypto randomness and SHA-256
+hashes, and acceptance atomically consumes one invitation while linking one
+provider identity. Commercial application services depend on the reusable
+audit-recorder port rather than HTTP controllers.
+
 ## Target table groups
 
 ### Identity and customers
 
-Phase 2 implements all five tables in this group. Identity rows and invitation
-records establish persistence boundaries only; they do not constitute an
-authentication/session implementation.
+Phase 2 introduced all five tables in this group. Phase 6 completes the
+provider-backed authentication boundary, invitation acceptance and one-use
+invitation-to-identity linkage. Dispatch owns secure browser session cookies;
+no application session or password table is required.
 
 | Table | Purpose and important constraints/indexes |
 | --- | --- |
@@ -200,8 +211,8 @@ later adapters.
 | `notification_templates` | Versioned channel/template definitions |
 | `notification_deliveries` | Recipient reference, channel, status, retry schedule and provider reference; sensitive bodies minimised |
 | `notification_preferences` | Customer channel consent/preference, separate from required service notices |
-| `admin_users`, `roles`, `permissions`, `admin_user_roles`, `role_permissions` | Provider identity and server-side RBAC; no local password unless identity decision requires it |
-| `audit_events` | Append-only before/after commercial history; indexed by entity/action/time; secrets redacted |
+| `admin_users`, `roles`, `permissions`, `admin_user_roles`, `role_permissions` | Phase 6 provider identities and server-side RBAC; initial system vocabulary is migration-seeded and no passwords are stored |
+| `audit_events` | Phase 6 append-only before/after commercial/security history; database triggers reject update/delete and application snapshots redact secret-bearing keys |
 | `idempotency_keys` | Scoped request hash and stored outcome with expiry; unique `(scope, key)` |
 
 ## Relationship summary
@@ -246,7 +257,8 @@ service notices, retries, provider IDs and audit correlation remain explicit.
 Phase 2 activates D1 and introduces the first forward-only migration for
 customer/catalogue foundations. Phase 3 adds pricing and Phase 4 adds promotion
 persistence. Phase 5 adds subscription and billing records and extends customer
-discounts with a validated subscription foreign key. Subsequent phases add owned
-tables. Applied migrations are never renamed or rewritten. Every migration
+discounts with a validated subscription foreign key. Phase 6 adds admin/RBAC/
+audit persistence and links a consumed invitation to one customer identity.
+Subsequent phases add owned tables. Applied migrations are never renamed or rewritten. Every migration
 receives clean-install and upgrade validation. Phase 1 intentionally has no
 migration because the target schema is not yet implemented.

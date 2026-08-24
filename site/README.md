@@ -28,10 +28,11 @@ This starter does not use `wrangler.jsonc`.
 - `drizzle/` contains forward-only generated migrations
 - `db/seeds/development.ts` exports opt-in demo fixtures and never auto-runs
 
-## Workspace Auth Headers
+## Identity, sessions and authorization
 
 OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
+`oai-authenticated-user-email` and their stable Site-scoped subject from
+`oai-authenticated-user-id`.
 
 SIWC-authenticated workspace sites may also receive
 `oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
@@ -79,6 +80,19 @@ OAuth cookies, and identity header injection. Do not implement app routes for
 those reserved paths. Routes that do not import and call the helper remain
 anonymous-compatible.
 
+SIWC establishes identity only; it does not prove customer ownership or admin
+permission. `app/server-authorization.ts` resolves the provider subject through
+the customer/admin repositories and enforces customer scope or an explicit
+permission on the server. The hosted dispatcher owns secure session cookies,
+sign-in, sign-out and callback processing; Zuno Pixel stores no passwords,
+OAuth tokens or session tokens.
+
+The first administrator is provisioned explicitly through
+`BootstrapFirstAdminService`; it is a one-use, database-constrained operation
+and grants `SUPER_ADMIN`. There is deliberately no public bootstrap route.
+Subsequent administrators and role changes go through
+`ManageAdminAccessService` and immutable audit events.
+
 SIWC establishes identity only; it does not prove workspace membership. Use the
 Sites hosting platform's access policy controls for workspace-wide restrictions,
 or enforce explicit server-side membership or allowlist checks.
@@ -97,9 +111,9 @@ actions tied to the current ChatGPT user. Leave public content anonymous.
 ## Database workflow
 
 Migrations `drizzle/0000_uneven_violations.sql` through
-`drizzle/0003_strange_absorbing_man.sql` establish customer/catalogue,
+`drizzle/0004_bored_red_ghost.sql` establish customer/catalogue,
 versioned pricing/quotes, discounts/promotions, and subscription/entitlement/
-billing persistence in order. Apply them through the Sites/Cloudflare
+billing plus identity/RBAC/audit persistence in order. Apply them through the Sites/Cloudflare
 environment for the target stage. Do not edit an applied migration; change
 `db/schema.ts` and generate the next forward-only migration.
 

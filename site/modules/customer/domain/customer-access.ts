@@ -7,6 +7,7 @@ export type CustomerIdentity = {
   provider: string;
   externalSubject: string;
   email: EmailAddress;
+  acceptedInvitationId: EntityId | null;
   createdAt: Date;
 };
 
@@ -16,6 +17,16 @@ export function createCustomerIdentity(input: CustomerIdentity): CustomerIdentit
     provider: requireText(input.provider, "provider", 80).toLowerCase(),
     externalSubject: requireText(input.externalSubject, "externalSubject", 255),
   };
+}
+
+export function acceptCustomerInvitation(invitation: CustomerInvitation, acceptedAt: Date): CustomerInvitation {
+  if (invitation.status !== "PENDING") {
+    throw new DomainValidationError("INVITATION_NOT_PENDING", "Invitation is not pending.");
+  }
+  if (acceptedAt >= invitation.expiresAt) {
+    throw new DomainValidationError("INVITATION_EXPIRED", "Invitation has expired.");
+  }
+  return createCustomerInvitation({ ...invitation, status: "ACCEPTED", acceptedAt });
 }
 
 export const INVITATION_STATUSES = ["PENDING", "ACCEPTED", "EXPIRED", "REVOKED"] as const;

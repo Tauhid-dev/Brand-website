@@ -4,6 +4,8 @@ import { EffectiveRange } from "../../pricing/domain/effective-range.ts";
 import { Money } from "../../pricing/domain/money.ts";
 import type { BillingInterval, PricingBreakdown } from "../../pricing/domain/pricing.ts";
 import type { Clock, IdGenerator } from "../../shared/application/ports.ts";
+import type { AuditRecorder } from "../../audit/application/ports.ts";
+import { AUDIT_ACTIONS } from "../../audit/domain/audit-event.ts";
 import { DomainConflictError, DomainValidationError } from "../../shared/domain/errors.ts";
 import { EntityId, StableCode } from "../../shared/domain/value-objects.ts";
 import type { SubscriptionPricingResolver, SubscriptionRepository } from "./ports.ts";
@@ -25,6 +27,7 @@ export class CreateSubscriptionService {
     private readonly pricing: SubscriptionPricingResolver,
     private readonly ids: IdGenerator,
     private readonly clock: Clock,
+    private readonly audit: AuditRecorder,
   ) {}
 
   async execute(input: {
@@ -67,12 +70,13 @@ export class CreateSubscriptionService {
       effectiveRange: new EffectiveRange(now, null), createdAt: now, updatedAt: now,
     }));
     await this.repository.create(subscription, price, entitlements);
+    await this.audit.record({ action: AUDIT_ACTIONS.subscriptionCreated, entityType: "SUBSCRIPTION", entityId: subscription.props.id.value, after: { subscription: subscription.props, price: price.props, entitlements: entitlements.map((item) => item.props) } });
     return subscription;
   }
 }
 
 export class SubscriptionLifecycleService {
-  constructor(private readonly repository: SubscriptionRepository, private readonly ids: IdGenerator, private readonly clock: Clock) {}
+  constructor(private readonly repository: SubscriptionRepository, private readonly ids: IdGenerator, private readonly clock: Clock, private readonly audit: AuditRecorder) {}
 
   async transition(subscriptionId: string, to: SubscriptionStatus): Promise<Subscription> {
     const current = await this.repository.findById(subscriptionId);
@@ -91,6 +95,7 @@ export class SubscriptionLifecycleService {
       }));
     }
     await this.repository.saveTransition(next, closeEntitlementsAt, restored);
+    await this.audit.record({ action: AUDIT_ACTIONS.subscriptionChanged, entityType: "SUBSCRIPTION", entityId: subscriptionId, before: current.props, after: next.props });
     return next;
   }
 
@@ -108,6 +113,7 @@ export class ScheduleSubscriptionPriceService {
     private readonly pricing: SubscriptionPricingResolver,
     private readonly ids: IdGenerator,
     private readonly clock: Clock,
+    private readonly audit: AuditRecorder,
   ) {}
 
   async execute(input: { subscriptionId: string; effectiveFrom: Date; source?: Exclude<SubscriptionPricingSource, "RESOLVED"> }): Promise<SubscriptionPrice> {
@@ -124,6 +130,7 @@ export class ScheduleSubscriptionPriceService {
     });
     const price = contractedPrice(this.ids, subscription.props.id, breakdown, input.effectiveFrom, input.source ?? "RENEWAL");
     await this.repository.publishPrice(price, closable[0]?.props.id.value ?? null);
+    await this.audit.record({ action: AUDIT_ACTIONS.subscriptionPriceScheduled, entityType: "SUBSCRIPTION_PRICE", entityId: price.props.id.value, before: closable[0]?.props ?? null, after: price.props });
     return price;
   }
 }

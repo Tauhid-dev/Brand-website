@@ -12,6 +12,7 @@ import { EntityId } from "../modules/shared/domain/value-objects.ts";
 import { CreateSubscriptionService, EntitlementService, ScheduleSubscriptionPriceService, SubscriptionLifecycleService } from "../modules/subscription/application/subscription-services.ts";
 import { D1SubscriptionRepository } from "../modules/subscription/infrastructure/d1-subscription-repository.ts";
 import { repositoryDatabase } from "./support/sqlite-d1.ts";
+import { NOOP_AUDIT } from "./support/audit.ts";
 
 const NOW = new Date("2026-08-23T00:00:00.000Z");
 const CUSTOMER_ID = "00000000-0000-4000-8000-000000000001";
@@ -39,7 +40,7 @@ async function setup() {
   const clock = { now: () => NOW };
   const subscriptions = new D1SubscriptionRepository(context.database);
   const create = new CreateSubscriptionService(
-    subscriptions, prices, new D1CatalogueRepository(context.database), new PricingService(prices), ids, clock,
+    subscriptions, prices, new D1CatalogueRepository(context.database), new PricingService(prices), ids, clock, NOOP_AUDIT,
   );
   return { ...context, prices, subscriptions, create, ids, clock };
 }
@@ -71,7 +72,7 @@ test("suspension, resumption, and cancellation revoke service without deleting h
     currentPeriodStart: NOW, currentPeriodEnd: new Date("2026-09-23T00:00:00.000Z"),
   });
   let now = NOW;
-  const lifecycle = new SubscriptionLifecycleService(context.subscriptions, context.ids, { now: () => now });
+  const lifecycle = new SubscriptionLifecycleService(context.subscriptions, context.ids, { now: () => now }, NOOP_AUDIT);
   now = new Date("2026-08-24T00:00:00.000Z");
   await lifecycle.suspend(subscription.props.id.value);
   assert.equal(await new EntitlementService(context.subscriptions, { now: () => now }).hasEntitlement(CUSTOMER_ID, "ai_receptionist"), false);
@@ -106,7 +107,7 @@ test("future contracted pricing versions close history without rewriting it", as
   const context = await setup();
   const created = await context.create.execute({ customerId: CUSTOMER_ID, planId: PLAN_ID, billingInterval: "MONTHLY", initialStatus: "ACTIVE" });
   const future = new Date("2026-09-01T00:00:00.000Z");
-  const schedule = new ScheduleSubscriptionPriceService(context.subscriptions, new PricingService(context.prices), context.ids, context.clock);
+  const schedule = new ScheduleSubscriptionPriceService(context.subscriptions, new PricingService(context.prices), context.ids, context.clock, NOOP_AUDIT);
   const next = await schedule.execute({ subscriptionId: created.props.id.value, effectiveFrom: future });
   assert.equal(next.props.pricingSource, "RENEWAL");
   assert.equal((await context.subscriptions.findPriceAt(created.props.id.value, NOW))?.props.effectiveRange.effectiveTo?.toISOString(), future.toISOString());
@@ -120,11 +121,11 @@ test("subscription-scoped discounts cannot leak into unrelated price resolution"
   const context = await setup();
   const created = await context.create.execute({ customerId: CUSTOMER_ID, planId: PLAN_ID, billingInterval: "MONTHLY", initialStatus: "ACTIVE" });
   const discounts = new D1DiscountRepository(context.database);
-  const discount = await new CreateDiscountService(discounts, context.ids, context.clock).execute({
+  const discount = await new CreateDiscountService(discounts, context.ids, context.clock, NOOP_AUDIT).execute({
     code: "contract_10", name: "Contract 10%", discountType: "PERCENTAGE", percentOffBasisPoints: 1_000,
     durationType: "FOREVER", startsAt: NOW, stackable: true, createdBy: "admin-1",
   });
-  await new ApplyCustomerDiscountService(discounts, context.prices, context.ids, context.clock).execute({
+  await new ApplyCustomerDiscountService(discounts, context.prices, context.ids, context.clock, NOOP_AUDIT).execute({
     customerId: CUSTOMER_ID, discountId: discount.props.id.value, subscriptionId: created.props.id.value,
     effectiveFrom: NOW, source: "ADMIN", appliedBy: "admin-1", reason: "Contracted concession",
   });

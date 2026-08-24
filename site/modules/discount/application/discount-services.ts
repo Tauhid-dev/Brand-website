@@ -1,4 +1,6 @@
 import type { Clock, IdGenerator } from "../../shared/application/ports.ts";
+import type { AuditRecorder } from "../../audit/application/ports.ts";
+import { AUDIT_ACTIONS } from "../../audit/domain/audit-event.ts";
 import { DomainConflictError } from "../../shared/domain/errors.ts";
 import { EntityId, StableCode } from "../../shared/domain/value-objects.ts";
 import type { PricingReferenceRepository } from "../../pricing/application/ports.ts";
@@ -31,7 +33,7 @@ export class CryptoPromotionCodeGenerator implements PromotionCodeGeneratorPort 
 }
 
 export class CreateDiscountService {
-  constructor(private readonly repository: DiscountRepository, private readonly ids: IdGenerator, private readonly clock: Clock) {}
+  constructor(private readonly repository: DiscountRepository, private readonly ids: IdGenerator, private readonly clock: Clock, private readonly audit: AuditRecorder) {}
   async execute(input: {
     code: string; name: string; description?: string | null; discountType: DiscountType;
     percentOffBasisPoints?: number | null; amountOffMinor?: number | null; currency?: string | null;
@@ -51,6 +53,7 @@ export class CreateDiscountService {
       stackable: input.stackable ?? false, createdBy: input.createdBy, createdAt: now, updatedAt: now,
     });
     await this.repository.saveDiscount(discount);
+    await this.audit.record({ action: AUDIT_ACTIONS.discountCreated, entityType: "DISCOUNT", entityId: discount.props.id.value, after: discount.props });
     return discount;
   }
 }
@@ -62,6 +65,7 @@ export class CreatePromotionCodeService {
     private readonly generator: PromotionCodeGeneratorPort,
     private readonly ids: IdGenerator,
     private readonly clock: Clock,
+    private readonly audit: AuditRecorder,
   ) {}
   async execute(input: {
     discountId: string; code?: string | null; customerId?: string | null; planId?: string | null;
@@ -84,12 +88,13 @@ export class CreatePromotionCodeService {
       firstPurchaseOnly: input.firstPurchaseOnly ?? false, createdAt: now, updatedAt: now,
     });
     await this.repository.savePromotionCode(promotion);
+    await this.audit.record({ action: AUDIT_ACTIONS.promotionCodeCreated, entityType: "PROMOTION_CODE", entityId: promotion.props.id.value, after: promotion.props });
     return promotion;
   }
 }
 
 export class ApplyCustomerDiscountService {
-  constructor(private readonly repository: DiscountRepository, private readonly references: PricingReferenceRepository, private readonly ids: IdGenerator, private readonly clock: Clock) {}
+  constructor(private readonly repository: DiscountRepository, private readonly references: PricingReferenceRepository, private readonly ids: IdGenerator, private readonly clock: Clock, private readonly audit: AuditRecorder) {}
   async execute(input: { customerId: string; discountId: string; subscriptionId?: string | null; effectiveFrom: Date; source: Exclude<CustomerDiscountSource, "PROMOTION_CODE">; appliedBy: string; reason: string }): Promise<CustomerDiscount> {
     if (!await this.references.customerExists(input.customerId)) throw new DomainConflictError("CUSTOMER_NOT_FOUND", "Customer does not exist.");
     const discount = await this.repository.findDiscountById(input.discountId);
@@ -104,6 +109,7 @@ export class ApplyCustomerDiscountService {
       createdAt: now, updatedAt: now,
     });
     await this.repository.saveCustomerDiscount(assignment);
+    await this.audit.record({ action: AUDIT_ACTIONS.customerDiscountApplied, entityType: "CUSTOMER_DISCOUNT", entityId: assignment.props.id.value, after: assignment.props });
     return assignment;
   }
 }
@@ -136,6 +142,7 @@ export class RedeemPromotionCodeService {
     private readonly repository: DiscountRepository,
     private readonly ids: IdGenerator,
     private readonly clock: Clock,
+    private readonly audit: AuditRecorder,
   ) {}
   async execute(input: { code: string; customerId: string; planId: string; subscriptionId?: string | null; idempotencyKey: string; appliedBy: string; currency: string }): Promise<CustomerDiscount> {
     const { promotion, discount } = await this.validation.execute(input);
@@ -154,12 +161,13 @@ export class RedeemPromotionCodeService {
       amountDiscounted: new Money(0, input.currency), redeemedAt: now,
     });
     await this.repository.claimPromotionCode(assignment, redemption);
+    await this.audit.record({ action: AUDIT_ACTIONS.promotionCodeRedeemed, entityType: "PROMOTION_CODE", entityId: promotion.props.id.value, after: { assignment: assignment.props, redemption } });
     return assignment;
   }
 }
 
 export class RecordDiscountApplicationService {
-  constructor(private readonly repository: DiscountRepository, private readonly ids: IdGenerator, private readonly clock: Clock) {}
+  constructor(private readonly repository: DiscountRepository, private readonly ids: IdGenerator, private readonly clock: Clock, private readonly audit: AuditRecorder) {}
   async execute(input: {
     discountId: string; promotionCodeId?: string | null; customerDiscountId: string;
     customerId: string; planId: string; idempotencyKey: string; amountDiscountedMinor: number; currency: string;
@@ -173,6 +181,7 @@ export class RecordDiscountApplicationService {
       amountDiscounted: new Money(input.amountDiscountedMinor, input.currency), redeemedAt: this.clock.now(),
     });
     await this.repository.saveChargeRedemption(redemption);
+    await this.audit.record({ action: AUDIT_ACTIONS.discountApplicationRecorded, entityType: "DISCOUNT_REDEMPTION", entityId: redemption.id.value, after: redemption });
   }
 }
 

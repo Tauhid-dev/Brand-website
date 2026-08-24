@@ -18,6 +18,7 @@ import {
   type PriceQuote,
 } from "../modules/pricing/domain/pricing.ts";
 import { EntityId } from "../modules/shared/domain/value-objects.ts";
+import { NOOP_AUDIT } from "./support/audit.ts";
 
 const NOW = new Date("2026-08-23T00:00:00.000Z");
 const CUSTOMER_ID = "00000000-0000-4000-8000-000000000001";
@@ -112,6 +113,7 @@ test("publishing a new version closes the current price without changing its amo
     repository,
     new SequenceIds(),
     { now: () => NOW },
+    NOOP_AUDIT,
   );
   const nextFrom = new Date("2026-09-01T00:00:00.000Z");
   await service.execute({
@@ -135,7 +137,7 @@ test("publishing rejects a range that collides with a future version", async () 
     new Date("2026-09-01T00:00:00.000Z"),
     null,
   )));
-  const service = new PublishPlanPriceService(repository, repository, new SequenceIds(), { now: () => NOW });
+  const service = new PublishPlanPriceService(repository, repository, new SequenceIds(), { now: () => NOW }, NOOP_AUDIT);
   await assert.rejects(service.execute({
     planId: PLAN_ID,
     billingInterval: "MONTHLY",
@@ -156,6 +158,7 @@ test("single resolver applies customer override before GST", async () => {
     repository,
     new SequenceIds(),
     { now: () => NOW },
+    NOOP_AUDIT,
   );
   await overrideService.execute({
     customerId: CUSTOMER_ID,
@@ -183,7 +186,7 @@ test("single resolver applies customer override before GST", async () => {
 test("overlapping customer overrides are rejected", async () => {
   const repository = new MemoryPricing();
   repository.planPrices.push(basePrice());
-  const service = new CreatePriceOverrideService(repository, repository, new SequenceIds(), { now: () => NOW });
+  const service = new CreatePriceOverrideService(repository, repository, new SequenceIds(), { now: () => NOW }, NOOP_AUDIT);
   const input = {
     customerId: CUSTOMER_ID,
     planId: PLAN_ID,
@@ -223,6 +226,7 @@ test("quote service stores an immutable transparent snapshot", async () => {
     repository,
     new SequenceIds(),
     { now: () => NOW },
+    NOOP_AUDIT,
   );
   const quote = await service.execute({
     customerId: CUSTOMER_ID,
