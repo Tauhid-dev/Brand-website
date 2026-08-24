@@ -1,6 +1,6 @@
 # Zuno Pixel commercial platform domain and database design
 
-Status: target design implemented through Phase 13. Phases 2–9 implement the
+Status: target design implemented through Phase 14. Phases 2–9 implement the
 commercial domain, operational portal and versioned integration boundary;
 Phase 10 adds the configured billing-webhook adapter and launch hardening, and
 Phase 11 completes provider-neutral billing operations and lifecycle controls.
@@ -8,7 +8,10 @@ Phase 12 completes semantic notification orchestration, recoverable delivery
 processing and full operational projection reconciliation. Phase 13 hardens the
 REST boundary with explicit field-minimised projections, exact route/permission
 contracts, bounded and validated input, actor-scoped idempotency and indexed
-cursor collection reads. No HTTP controller owns commercial policy.
+cursor collection reads. Phase 14 provides a configuration-gated HTTPS agent
+provider adapter, service-authenticated link synchronization and reconciliation,
+recoverable provisioning leases and immutable attempt history. No HTTP
+controller owns commercial or provider workflow policy.
 
 ## Architecture decision
 
@@ -91,7 +94,9 @@ provider account. Internal billing notes are append-only and administrator-only.
 - `Invoice`: immutable line totals plus controlled payment-state transitions.
 - `NotificationDelivery`: delivery/retry state; workflow modules request messages
   through a `NotificationService` port.
-- `ProvisioningJob`: requested agent operation, attempts and terminal outcome.
+- `ProvisioningJob`: requested agent operation, recoverable processing lease,
+  bounded attempts and terminal outcome; each provider attempt is durable and
+  immutable after completion.
 
 Planned services include `RegisterCustomer`, `InviteCustomer`, `CreateCustomer`,
 `AdvanceOnboarding`, `ResolveEffectivePrice`, `ChangeSubscription`,
@@ -227,6 +232,7 @@ Phase 12 adds durable delivery-attempt history and recovery controls.
 | --- | --- |
 | `agent_links` | Customer to external agent ID and provisioning status |
 | `agent_provisioning_jobs` | Idempotent provision/update/suspend jobs with attempts and error category |
+| `agent_provisioning_attempts` | Phase 14 immutable provider-attempt history, safe error category and non-secret provider reference |
 | `operational_queue_items` | Materialised work items for `CUSTOMER_ACTION`, `INTERNAL_ACTION`, `BILLING_ATTENTION`, `AGENT_PROVISIONING`; source reference is unique while open |
 | `notification_templates` | Versioned channel/template definitions |
 | `notification_deliveries` | Recipient reference, channel, status, retry schedule and provider reference; sensitive bodies minimised |

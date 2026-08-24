@@ -916,6 +916,8 @@ export const agentProvisioningJobs = sqliteTable(
     attemptCount: integer("attempt_count").notNull().default(0),
     maxAttempts: integer("max_attempts").notNull().default(5),
     nextAttemptAt: timestamp("next_attempt_at"),
+    processingStartedAt: timestamp("processing_started_at"),
+    leaseExpiresAt: timestamp("lease_expires_at"),
     errorCategory: text("error_category"),
     requestedAt: timestamp("requested_at").notNull(),
     startedAt: timestamp("started_at"),
@@ -928,12 +930,39 @@ export const agentProvisioningJobs = sqliteTable(
     uniqueIndex("agent_provisioning_jobs_idempotency_uq").on(table.idempotencyKey),
     index("agent_provisioning_jobs_link_status_idx").on(table.agentLinkId, table.status, table.nextAttemptAt),
     index("agent_provisioning_jobs_customer_status_idx").on(table.customerId, table.status),
+    index("agent_provisioning_jobs_lease_idx").on(table.status, table.leaseExpiresAt),
     check("agent_provisioning_jobs_operation_check", sql`${table.operation} in ('PROVISION', 'UPDATE', 'SUSPEND', 'RESUME')`),
     check("agent_provisioning_jobs_status_check", sql`${table.status} in ('PENDING', 'IN_PROGRESS', 'SUCCEEDED', 'FAILED', 'CANCELLED')`),
     check("agent_provisioning_jobs_attempt_check", sql`${table.attemptCount} >= 0 and ${table.maxAttempts} > 0 and ${table.attemptCount} <= ${table.maxAttempts}`),
     check("agent_provisioning_jobs_outcome_check", sql`(${table.status} = 'SUCCEEDED' and ${table.completedAt} is not null and ${table.errorCategory} is null) or (${table.status} = 'FAILED' and ${table.completedAt} is not null and ${table.errorCategory} is not null) or (${table.status} in ('PENDING', 'IN_PROGRESS', 'CANCELLED') and ${table.completedAt} is null and ${table.errorCategory} is null)`),
+    check("agent_provisioning_jobs_lease_check", sql`(${table.status} = 'IN_PROGRESS' and ${table.processingStartedAt} is not null and ${table.leaseExpiresAt} is not null) or (${table.status} <> 'IN_PROGRESS' and ${table.processingStartedAt} is null and ${table.leaseExpiresAt} is null)`),
     check("agent_provisioning_jobs_version_check", sql`${table.version} > 0`),
     check("agent_provisioning_jobs_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt}`),
+  ],
+);
+
+export const agentProvisioningAttempts = sqliteTable(
+  "agent_provisioning_attempts",
+  {
+    id: text("id").primaryKey(),
+    jobId: text("job_id").notNull().references(() => agentProvisioningJobs.id, { onDelete: "restrict" }),
+    attemptNumber: integer("attempt_number").notNull(),
+    provider: text("provider").notNull(),
+    status: text("status").notNull(),
+    providerReference: text("provider_reference"),
+    errorCategory: text("error_category"),
+    retryable: integer("retryable", { mode: "boolean" }).notNull().default(false),
+    startedAt: timestamp("started_at").notNull(),
+    completedAt: timestamp("completed_at"),
+    createdAt: timestamp("created_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("agent_provisioning_attempts_job_number_uq").on(table.jobId, table.attemptNumber),
+    index("agent_provisioning_attempts_job_created_idx").on(table.jobId, table.createdAt),
+    index("agent_provisioning_attempts_status_created_idx").on(table.status, table.createdAt),
+    check("agent_provisioning_attempts_number_check", sql`${table.attemptNumber} > 0`),
+    check("agent_provisioning_attempts_status_check", sql`${table.status} in ('PROCESSING', 'SUCCEEDED', 'FAILED')`),
+    check("agent_provisioning_attempts_outcome_check", sql`(${table.status} = 'PROCESSING' and ${table.completedAt} is null and ${table.providerReference} is null and ${table.errorCategory} is null and ${table.retryable} = 0) or (${table.status} = 'SUCCEEDED' and ${table.completedAt} is not null and ${table.errorCategory} is null and ${table.retryable} = 0) or (${table.status} = 'FAILED' and ${table.completedAt} is not null and ${table.providerReference} is null and ${table.errorCategory} is not null)`),
   ],
 );
 

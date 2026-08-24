@@ -58,13 +58,37 @@ errors 500.
 | `DELETE /admin/service-credentials/{id}` | ChatGPT SIWC admin | `ADMIN_USER_MANAGE` |
 | `GET /integrations/agent/customers/{customerId}` | Service bearer | `customer:read` |
 | `GET /integrations/agent/customers/{customerId}/entitlements` | Service bearer | `subscription:validate`, `entitlement:read` |
+| `GET /integrations/agent/customers/{customerId}/subscription-validation` | Service bearer | `subscription:validate`, `entitlement:read` |
 | `GET /integrations/agent/customers/{customerId}/bootstrap` | Service bearer | `customer:read`, `subscription:validate`, `entitlement:read` |
+| `PATCH /integrations/agent/customers/{customerId}/agent-link` | Service bearer | `agent-link:write` |
 | `POST /integrations/agent/customers/{customerId}/provisioning-jobs` | Service bearer | `agent-link:write` |
+| `POST /integrations/agent/customers/{customerId}/reconciliation` | Service bearer | `agent-link:write` |
+| `POST /integrations/agent/provisioning-jobs/process` | Service bearer | `agent-link:write` |
 | `POST /webhooks/billing/{provider}` | Provider signature | Configured provider only; Stripe uses `Stripe-Signature` |
 
 Agent DTOs contain only business profile, subscription validation,
 entitlements and link/provisioning fields. They exclude notes, negotiated
 pricing, discounts, audit history and identity secrets.
+
+## Agent provider operations
+
+Agent link writes, reconciliation and job processing use service credentials,
+never administrator browser sessions. Provision, update, suspend and resume
+commands pass through the `AgentProvisioner` application port. The configured
+HTTP adapter sends a minimal customer/platform reference and the durable job
+idempotency key; the external application pulls its field-minimised bootstrap
+profile through the service-authenticated read contract.
+
+Provider execution is disabled unless `AGENT_PLATFORM_BASE_URL` and
+`AGENT_PLATFORM_ACCESS_TOKEN` are supplied at runtime. The token is never stored
+or audited. Transient network, 408, 425, 429 and 5xx failures receive bounded
+exponential retries. Other 4xx and invalid-response failures are terminal.
+Processing leases allow abandoned work to be reclaimed, and
+`agent_provisioning_attempts` keeps provider references and safe error
+categories without response bodies or credentials. Reconciliation compares
+subscription validity, internal link state and the external provider state,
+then synchronizes evidence or queues the required provision/suspend/resume
+operation through the same application service.
 
 ## Billing operations
 

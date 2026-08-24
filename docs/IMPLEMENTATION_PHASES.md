@@ -151,11 +151,17 @@ rules and production-grade API/migration/authorization tests are complete.
 
 ## Phase 14 — Agent platform integration
 
-Status: not started.
+Status: complete (25 August 2026).
 
-Implement the reviewed external agent platform adapter behind the existing
-agent ports, including provisioning/update/suspend workflows, retries,
-idempotency, reconciliation, observability and safe credential handling.
+Acceptance criteria: purpose-specific bootstrap, entitlement and subscription
+validation responses remain field-minimised and service-authenticated; external
+link synchronization and reconciliation use the `agent-link:write` scope;
+provision/update/suspend/resume execute through a configuration-gated HTTPS
+adapter behind the existing port; credentials remain runtime-only; provider
+idempotency, classified bounded retries, recoverable leases, immutable attempt
+history, provider references and audit events provide safe execution and
+observability; the admin agent workspace exposes jobs and attempts; the Phase
+13-to-14 migration preserves in-flight work and all validation gates pass.
 
 ## Phase 15 — Stripe and billing-provider integration
 
