@@ -56,6 +56,11 @@ export const AUDIT_ACTIONS = {
   agentProvisioningSucceeded: "AGENT_PROVISIONING_SUCCEEDED",
   agentProvisioningRetryScheduled: "AGENT_PROVISIONING_RETRY_SCHEDULED",
   agentProvisioningFailed: "AGENT_PROVISIONING_FAILED",
+  serviceCredentialCreated: "SERVICE_CREDENTIAL_CREATED",
+  serviceCredentialRotated: "SERVICE_CREDENTIAL_ROTATED",
+  serviceCredentialRevoked: "SERVICE_CREDENTIAL_REVOKED",
+  serviceAuthenticationFailed: "SERVICE_AUTHENTICATION_FAILED",
+  serviceApiRequested: "SERVICE_API_REQUESTED",
 } as const;
 
 export type AuditJson = null | boolean | number | string | AuditJson[] | { [key: string]: AuditJson };

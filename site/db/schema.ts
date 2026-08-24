@@ -1007,3 +1007,71 @@ export const notificationDeliveries = sqliteTable(
     check("notification_deliveries_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt}`),
   ],
 );
+
+export const serviceCredentials = sqliteTable(
+  "service_credentials",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    secretHash: text("secret_hash").notNull(),
+    scopes: text("scopes_json", { mode: "json" }).$type<string[]>().notNull(),
+    status: text("status").notNull().default("ACTIVE"),
+    expiresAt: timestamp("expires_at").notNull(),
+    rotatedFromId: text("rotated_from_id"),
+    createdByAdminUserId: text("created_by_admin_user_id").notNull().references(() => adminUsers.id, { onDelete: "restrict" }),
+    lastUsedAt: timestamp("last_used_at"),
+    revokedAt: timestamp("revoked_at"),
+    revokedByAdminUserId: text("revoked_by_admin_user_id").references(() => adminUsers.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("service_credentials_secret_hash_uq").on(table.secretHash),
+    index("service_credentials_status_expiry_idx").on(table.status, table.expiresAt),
+    index("service_credentials_rotated_from_idx").on(table.rotatedFromId),
+    check("service_credentials_status_check", sql`${table.status} in ('ACTIVE', 'REVOKED')`),
+    check("service_credentials_expiry_check", sql`${table.expiresAt} > ${table.createdAt}`),
+    check("service_credentials_revocation_check", sql`(${table.status} = 'ACTIVE' and ${table.revokedAt} is null and ${table.revokedByAdminUserId} is null) or (${table.status} = 'REVOKED' and ${table.revokedAt} is not null and ${table.revokedByAdminUserId} is not null)`),
+    check("service_credentials_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt}`),
+  ],
+);
+
+export const idempotencyKeys = sqliteTable(
+  "idempotency_keys",
+  {
+    id: text("id").primaryKey(),
+    scope: text("scope").notNull(),
+    key: text("key").notNull(),
+    requestHash: text("request_hash").notNull(),
+    state: text("state").notNull().default("PROCESSING"),
+    responseStatus: integer("response_status"),
+    responseBody: text("response_body_json", { mode: "json" }).$type<unknown>(),
+    expiresAt: timestamp("expires_at").notNull(),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("idempotency_keys_scope_key_uq").on(table.scope, table.key),
+    index("idempotency_keys_expiry_idx").on(table.expiresAt),
+    check("idempotency_keys_state_check", sql`${table.state} in ('PROCESSING', 'COMPLETED')`),
+    check("idempotency_keys_response_check", sql`(${table.state} = 'PROCESSING' and ${table.responseStatus} is null and ${table.responseBody} is null) or (${table.state} = 'COMPLETED' and ${table.responseStatus} between 200 and 499 and ${table.responseBody} is not null)`),
+    check("idempotency_keys_expiry_check", sql`${table.expiresAt} > ${table.createdAt}`),
+    check("idempotency_keys_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt}`),
+  ],
+);
+
+export const serviceRateLimits = sqliteTable(
+  "service_rate_limits",
+  {
+    credentialId: text("credential_id").notNull().references(() => serviceCredentials.id, { onDelete: "cascade" }),
+    windowStartedAt: timestamp("window_started_at").notNull(),
+    requestCount: integer("request_count").notNull().default(1),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.credentialId, table.windowStartedAt] }),
+    index("service_rate_limits_window_idx").on(table.windowStartedAt),
+    check("service_rate_limits_count_check", sql`${table.requestCount} > 0`),
+    check("service_rate_limits_timestamps_check", sql`${table.updatedAt} >= ${table.windowStartedAt}`),
+  ],
+);

@@ -3,6 +3,7 @@ import {
   AuthorizationDeniedError,
   DomainConflictError,
   DomainValidationError,
+  RateLimitExceededError,
 } from "../domain/errors.ts";
 export { RequestContextFactory } from "../application/request-context.ts";
 export type { RequestActor, RequestContext } from "../application/request-context.ts";
@@ -31,6 +32,9 @@ export function mapApplicationError(error: unknown, requestId: string): ApiProbl
   if (error instanceof DomainConflictError) {
     const status = error.code.endsWith("_NOT_FOUND") ? 404 : 409;
     return problem(status, error.code, error.message, requestId);
+  }
+  if (error instanceof RateLimitExceededError) {
+    return problem(429, error.code, error.message, requestId);
   }
   return problem(500, "INTERNAL_ERROR", "An unexpected error occurred.", requestId);
 }
