@@ -1,9 +1,11 @@
 # Zuno Pixel commercial platform domain and database design
 
-Status: target design implemented through Phase 11. Phases 2–9 implement the
+Status: target design implemented through Phase 12. Phases 2–9 implement the
 commercial domain, operational portal and versioned integration boundary;
 Phase 10 adds the configured billing-webhook adapter and launch hardening, and
 Phase 11 completes provider-neutral billing operations and lifecycle controls.
+Phase 12 completes semantic notification orchestration, recoverable delivery
+processing and full operational projection reconciliation.
 
 ## Architecture decision
 
@@ -215,7 +217,8 @@ execution or sends notifications from an HTTP controller.
 
 ### Operations, agents and cross-cutting infrastructure
 
-Phase 7 implements the agent, queue and notification tables in this group.
+Phase 7 implements the agent, queue and notification foundations in this group;
+Phase 12 adds durable delivery-attempt history and recovery controls.
 
 | Table | Purpose and important constraints/indexes |
 | --- | --- |
@@ -224,6 +227,7 @@ Phase 7 implements the agent, queue and notification tables in this group.
 | `operational_queue_items` | Materialised work items for `CUSTOMER_ACTION`, `INTERNAL_ACTION`, `BILLING_ATTENTION`, `AGENT_PROVISIONING`; source reference is unique while open |
 | `notification_templates` | Versioned channel/template definitions |
 | `notification_deliveries` | Recipient reference, channel, status, retry schedule and provider reference; sensitive bodies minimised |
+| `notification_delivery_attempts` | Immutable provider-neutral processing history with attempt number, outcome and lease-recovery evidence |
 | `notification_preferences` | Customer channel consent/preference, separate from required service notices |
 | `admin_users`, `roles`, `permissions`, `admin_user_roles`, `role_permissions` | Phase 6 provider identities and server-side RBAC; initial system vocabulary is migration-seeded and no passwords are stored |
 | `audit_events` | Phase 6 append-only before/after commercial/security history; database triggers reject update/delete and application snapshots redact secret-bearing keys |
@@ -256,12 +260,21 @@ Application services update source state and enqueue/outbox the corresponding
 work item in the same transaction. Completing a queue item never independently
 changes customer, billing or subscription state.
 
+Phase 12 adds an idempotent recovery projector over registrations, onboarding
+cases/tasks, invoices, integrations and agent jobs. It creates missing work,
+refreshes changed priority/title/due facts and closes stale projections. A
+bounded/truncated scan never closes unseen work.
+
 ## Notification policy
 
-Domain/application services request a semantic notification (for example,
-`PAYMENT_REMINDER_DUE`) through a port. A delivery worker chooses templates and
-providers. HTTP controllers never send email/SMS directly. Consent, required
-service notices, retries, provider IDs and audit correlation remain explicit.
+Domain/application services request a semantic notification through a port.
+Phase 12's reconciliation source covers welcome, customer/onboarding action,
+payment, subscription lifecycle, expiring discount, agent-ready and integration
+attention messages. A delivery worker chooses templates and provider adapters;
+its five-minute lease is recoverable, every attempt is durable and external
+channels remain disabled unless explicitly configured. HTTP controllers never
+send messages directly. Consent, required service notices, retries, provider
+IDs, in-app read state and audit correlation remain explicit.
 
 ## Security and privacy boundaries
 
@@ -292,6 +305,9 @@ anonymous API rate limits, plus forward guards for provider reconciliation.
 Phase 11 adds billing profiles/notes and rebuilds `subscriptions` forward-only
 to add lifecycle deadlines and scheduled cancellation while preserving data and
 recreating every cross-table trigger that depends on the subscription table.
+Phase 12 rebuilds notification records forward-only to add WhatsApp channel
+readiness, processing leases, cancellation/read state and immutable attempt
+history; interrupted pre-upgrade processing records are safely requeued.
 Applied migrations are never renamed or rewritten. Every migration receives
 clean-install and upgrade validation. Phase 1 intentionally has no migration
 because the target schema was not yet implemented.

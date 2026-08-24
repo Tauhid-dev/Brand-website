@@ -38,4 +38,8 @@ export class OperationalQueueItem {
     if (!["OPEN", "CLAIMED"].includes(this.props.status)) throw new DomainConflictError("QUEUE_ITEM_ALREADY_RESOLVED", "Queue item is already resolved.");
     return new OperationalQueueItem({ ...this.props, status, resolvedAt: at, updatedAt: at, version: this.props.version + 1 });
   }
+
+  refresh(input: { customerId: EntityId | null; priority: number; title: string; availableAt: Date; dueAt: Date | null }, at: Date): OperationalQueueItem {
+    return new OperationalQueueItem({ ...this.props, ...input, updatedAt: at, version: this.props.version + 1 });
+  }
 }

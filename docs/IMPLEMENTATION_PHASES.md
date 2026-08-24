@@ -120,12 +120,20 @@ commercial actions are audited; no raw card data is stored.
 
 ## Phase 12 — Notifications and operational work queues
 
-Status: not started.
+Status: complete (24 August 2026).
 
-Complete delivery orchestration for commercial notifications and reliable
-projections for pending customer action, pending internal action, billing
-attention and agent provisioning. Reuse the Phase 7 source aggregates, delivery
-records and queue primitives; do not couple delivery or queue policy to HTTP.
+Acceptance criteria: versioned templates cover the approved commercial message
+vocabulary; email, SMS, WhatsApp and in-app channels remain provider-neutral and
+external delivery is disabled without explicit configuration; semantic message
+reconciliation is consent-aware and idempotent; workers claim deliveries with
+recoverable leases, immutable attempt history, bounded retries and audited
+outcomes; in-app notices are customer-scoped and readable; operational queue
+reconciliation creates, refreshes and closes projections for registrations,
+onboarding, customer/internal tasks, billing/overdue invoices, integrations,
+agent provisioning and launch readiness without changing source lifecycle
+state; the protected admin workspace answers what requires attention today and
+supports claim/complete/dismiss actions; forward migrations preserve existing
+deliveries and all validation gates pass.
 
 ## Phase 13 — REST API production hardening
 

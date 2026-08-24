@@ -254,6 +254,8 @@ h3 { font-size: 1.45rem; }
 .portal-action { padding-top: 12px; margin-top: 14px; border-top: 1px solid var(--line); }
 .portal-action summary { color: var(--cyan-dark); cursor: pointer; font-size: .8rem; font-weight: 850; }
 .portal-action form { padding-top: 16px; }
+.portal-inline-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
+.portal-inline-actions .portal-action { margin-top: 0; min-width: 110px; padding-top: 0; border-top: 0; }
 .confirm-check { flex-basis: 100%; display: flex; gap: 8px; align-items: center; color: var(--ink); font-size: .76rem; font-weight: 700; }
 .portal-message h1 { margin: 20px 0; font-size: clamp(2.8rem, 5vw, 5rem); }
 .portal-message p { color: var(--muted); font-size: 1.1rem; }

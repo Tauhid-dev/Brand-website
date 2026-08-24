@@ -1,0 +1,1 @@
+CREATE INDEX `notification_deliveries_lease_idx` ON `notification_deliveries` (`status`,`lease_expires_at`);

@@ -130,12 +130,14 @@ actions tied to the current ChatGPT user. Leave public content anonymous.
 ## Database workflow
 
 Migrations `drizzle/0000_uneven_violations.sql` through
-`drizzle/0007_regular_shadowcat.sql` establish customer/catalogue, versioned
+`drizzle/0010_stale_kang.sql` establish customer/catalogue, versioned
 pricing/quotes, discounts/promotions, subscription/entitlement/billing,
 identity/RBAC/audit, onboarding/operations/notifications, API security and the
-billing-webhook/public-rate-limit hardening records in order. Apply them through
-the Sites/Cloudflare environment for the target stage. Do not edit an applied
-migration; change `db/schema.ts` and generate the next forward-only migration.
+billing-webhook/public-rate-limit hardening records, Phase 11 billing
+operations, and Phase 12 notification delivery history/recovery indexes in
+order. Apply them through the Sites/Cloudflare environment for the target
+stage. Do not edit an applied migration; change `db/schema.ts` and generate the
+next forward-only migration.
 
 Development fixtures include clearly fictional catalogue/customer examples and
 the four initial AUD price sets. They are exported separately from production

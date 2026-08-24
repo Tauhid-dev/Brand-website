@@ -5,7 +5,7 @@ import { chatGPTSignOutPath } from "@/app/chatgpt-auth";
 export const adminNav = [
   ["/admin", "Dashboard"], ["/admin/customers", "Customers"], ["/admin/catalogue", "Catalogue"],
   ["/admin/pricing", "Pricing"], ["/admin/discounts", "Discounts"], ["/admin/subscriptions", "Subscriptions"],
-  ["/admin/billing", "Billing"], ["/admin/agents", "Agent integration"], ["/admin/audit", "Audit log"], ["/admin/settings", "Settings"],
+  ["/admin/billing", "Billing"], ["/admin/operations", "Operations"], ["/admin/agents", "Agent integration"], ["/admin/audit", "Audit log"], ["/admin/settings", "Settings"],
 ] as const;
 
 export function PortalShell({ kind, title, subtitle, user, children }: { kind: "Customer" | "Admin"; title: string; subtitle: string; user: string; children: ReactNode }) {

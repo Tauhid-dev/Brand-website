@@ -23,10 +23,11 @@ export type CustomerAccountView = {
   agentLinks: Array<Record<string, unknown>>;
   agentJobs: Array<Record<string, unknown>>;
   notificationPreferences: Array<Record<string, unknown>>;
+  inAppNotifications: Array<Record<string, unknown>>;
 };
 
 export type AdminDashboardView = {
-  metrics: { customers: number; currentSubscriptions: number; onboardingAttention: number; openInvoices: number; openQueueItems: number };
+  metrics: { customers: number; currentSubscriptions: number; onboardingAttention: number; openInvoices: number; openQueueItems: number; attentionToday: number; overdueWork: number };
   queues: Array<Record<string, unknown>>;
   recentCustomers: PortalCustomerSummary[];
 };
@@ -49,6 +50,12 @@ export interface PortalReadRepository {
   getSubscriptions(): Promise<Array<Record<string, unknown>>>;
   getBilling(at?: Date): Promise<{ invoices: Array<Record<string, unknown>>; reminders: Array<Record<string, unknown>> }>;
   getAgents(): Promise<{ links: Array<Record<string, unknown>>; jobs: Array<Record<string, unknown>> }>;
+  getOperations(at?: Date): Promise<{
+    metrics: { attentionToday: number; overdueWork: number; unclaimedWork: number; failedDeliveries: number; processingDeliveries: number };
+    queues: Array<Record<string, unknown>>;
+    deliveries: Array<Record<string, unknown>>;
+    templates: Array<Record<string, unknown>>;
+  }>;
   getAuditEvents(limit?: number): Promise<Array<Record<string, unknown>>>;
   getAdminUsers(): Promise<Array<Record<string, unknown>>>;
 }
