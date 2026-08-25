@@ -67,6 +67,7 @@ export const AUDIT_ACTIONS = {
   agentProvisioningSucceeded: "AGENT_PROVISIONING_SUCCEEDED",
   agentProvisioningRetryScheduled: "AGENT_PROVISIONING_RETRY_SCHEDULED",
   agentProvisioningFailed: "AGENT_PROVISIONING_FAILED",
+  agentLinkSynchronized: "AGENT_LINK_SYNCHRONIZED",
   serviceCredentialCreated: "SERVICE_CREDENTIAL_CREATED",
   serviceCredentialRotated: "SERVICE_CREDENTIAL_ROTATED",
   serviceCredentialRevoked: "SERVICE_CREDENTIAL_REVOKED",

@@ -47,6 +47,14 @@ the hosting environment. Keep that secret outside source control. Outbound
 payment execution is deliberately disabled until a reviewed provider adapter is
 configured; there is no fake payment fallback.
 
+Outbound agent provisioning is enabled only when both
+`AGENT_PLATFORM_BASE_URL` and `AGENT_PLATFORM_ACCESS_TOKEN` are supplied by the
+hosting environment. The URL must use HTTPS outside local development. The
+access token is sent only to that configured origin and is never stored in D1,
+returned by an API, written to audit history or included in provider errors.
+Without both values, processing and reconciliation fail closed with 503; there
+is no development success fallback.
+
 ## Identity, sessions and authorization
 
 OpenAI workspace sites can read the current user's email from
@@ -130,12 +138,13 @@ actions tied to the current ChatGPT user. Leave public content anonymous.
 ## Database workflow
 
 Migrations `drizzle/0000_uneven_violations.sql` through
-`drizzle/0011_yummy_vin_gonzales.sql` establish customer/catalogue, versioned
+`drizzle/0012_old_morph.sql` establish customer/catalogue, versioned
 pricing/quotes, discounts/promotions, subscription/entitlement/billing,
 identity/RBAC/audit, onboarding/operations/notifications, API security and the
 billing-webhook/public-rate-limit hardening records, Phase 11 billing
-operations, Phase 12 notification delivery history/recovery, and Phase 13 API
-cursor-query indexes in order. Apply them through the Sites/Cloudflare environment for the target
+operations, Phase 12 notification delivery history/recovery, Phase 13 API
+cursor-query indexes, and Phase 14 agent job leases and immutable provider
+attempt history in order. Apply them through the Sites/Cloudflare environment for the target
 stage. Do not edit an applied migration; change `db/schema.ts` and generate the
 next forward-only migration.
 

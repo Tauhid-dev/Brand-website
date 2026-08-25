@@ -17,12 +17,14 @@ export class AgentIntegrationService {
   }
 
   async buildBootstrapProfile(customerId: string) {
-    const [customer, entitlement, agentLink] = await Promise.all([
-      this.getCustomer(customerId), this.entitlements.getEntitlements(customerId), this.repository.findAgentLink(customerId),
+    const [customer, onboarding, entitlement, agentLink] = await Promise.all([
+      this.getCustomer(customerId), this.repository.findOnboardingState(customerId),
+      this.entitlements.getEntitlements(customerId), this.repository.findAgentLink(customerId),
     ]);
     const planCode = entitlement ? await this.repository.findPlanCode(entitlement.planId) : null;
     return Object.freeze({
       customer,
+      onboarding: onboarding ?? { status: "NOT_STARTED", updatedAt: null },
       subscription: { status: entitlement?.subscriptionStatus ?? "NOT_STARTED", valid: entitlement?.valid ?? false, validUntil: entitlement?.validUntil ?? null, planCode },
       entitlements: entitlement?.entitlements ?? {},
       agentLink: agentLink ?? { platform: null, externalAgentId: null, status: "NOT_PROVISIONED" },
