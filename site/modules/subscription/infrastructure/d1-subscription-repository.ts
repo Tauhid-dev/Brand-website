@@ -43,6 +43,22 @@ export class D1SubscriptionRepository implements SubscriptionRepository {
     return row ? mapSubscription(row) : null;
   }
 
+  async linkProviderReferences(input: { subscriptionId: string; provider: string; externalCustomerId: string; externalSubscriptionId: string; at: Date }): Promise<void> {
+    const current = await this.findById(input.subscriptionId);
+    if (!current) throw new DomainConflictError("SUBSCRIPTION_NOT_FOUND", "Subscription does not exist.");
+    const provider = input.provider.toLowerCase();
+    if (current.props.externalBillingProvider && (current.props.externalBillingProvider !== provider || current.props.externalCustomerId !== input.externalCustomerId || (current.props.externalSubscriptionId && current.props.externalSubscriptionId !== input.externalSubscriptionId))) {
+      throw new DomainConflictError("SUBSCRIPTION_PROVIDER_REFERENCE_CONFLICT", "Subscription is already linked to different provider references.");
+    }
+    try {
+      const result = await this.db.update(subscriptions).set({
+        externalBillingProvider: provider, externalCustomerId: input.externalCustomerId,
+        externalSubscriptionId: input.externalSubscriptionId, version: current.props.version + 1, updatedAt: input.at,
+      }).where(eq(subscriptions.id, input.subscriptionId));
+      if (Number(result.meta.changes) !== 1) throw new DomainConflictError("SUBSCRIPTION_NOT_FOUND", "Subscription does not exist.");
+    } catch (error) { throw mapSubscriptionConflict(error); }
+  }
+
   async create(subscription: Subscription, price: SubscriptionPrice, entitlements: readonly SubscriptionEntitlement[]): Promise<void> {
     type BatchItem = Parameters<AppDatabase["batch"]>[0][number];
     const statements: BatchItem[] = [

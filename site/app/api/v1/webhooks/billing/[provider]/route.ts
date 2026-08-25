@@ -2,6 +2,7 @@ import { ReconcileBillingEventService } from "@/modules/billing/application/bill
 import { ProcessBillingWebhookService } from "@/modules/billing/application/billing-webhook-service";
 import { D1BillingRepository } from "@/modules/billing/infrastructure/d1-billing-repository";
 import { D1BillingWebhookRepository } from "@/modules/billing/infrastructure/d1-billing-webhook-repository";
+import { D1BillingProviderReferenceRepository } from "@/modules/billing/infrastructure/d1-billing-provider-reference-repository";
 import { D1SubscriptionRepository } from "@/modules/subscription/infrastructure/d1-subscription-repository";
 import { AUDIT_ACTIONS } from "@/modules/audit/domain/audit-event";
 import { AuthenticationRequiredError } from "@/modules/shared/domain/errors";
@@ -16,7 +17,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ pro
     const rawBody = await readBoundedText(request, 262_144);
     const runtime = await createApiRuntime(request, requestId);
     const audit = actorAudit(runtime, { type: "SYSTEM", id: `billing-webhook:${provider}` });
-    const service = new ProcessBillingWebhookService(verifier, new D1BillingWebhookRepository(runtime.db), new ReconcileBillingEventService(new D1SubscriptionRepository(runtime.db), new D1BillingRepository(runtime.db), runtime.ids, runtime.clock, audit), runtime.ids, runtime.clock, audit);
+    const service = new ProcessBillingWebhookService(verifier, new D1BillingWebhookRepository(runtime.db), new ReconcileBillingEventService(new D1SubscriptionRepository(runtime.db), new D1BillingRepository(runtime.db), runtime.ids, runtime.clock, audit, new D1BillingProviderReferenceRepository(runtime.db)), runtime.ids, runtime.clock, audit);
     try {
       const result = await service.execute(rawBody, request.headers, requestId);
       return dataResponse({ received: true, duplicate: result.duplicate, status: result.status }, result.duplicate ? 200 : 202, { "cache-control": "no-store" });

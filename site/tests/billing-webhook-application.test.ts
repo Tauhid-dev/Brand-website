@@ -4,6 +4,7 @@ import { ProcessBillingWebhookService } from "../modules/billing/application/bil
 import { ReconcileBillingEventService } from "../modules/billing/application/billing-event-reconciliation-service.ts";
 import { D1BillingRepository } from "../modules/billing/infrastructure/d1-billing-repository.ts";
 import { D1BillingWebhookRepository } from "../modules/billing/infrastructure/d1-billing-webhook-repository.ts";
+import { D1BillingProviderReferenceRepository } from "../modules/billing/infrastructure/d1-billing-provider-reference-repository.ts";
 import { StripeWebhookVerifier } from "../modules/billing/infrastructure/stripe-webhook-verifier.ts";
 import { BillingWebhookEvent } from "../modules/billing/domain/billing-webhook.ts";
 import { D1SubscriptionRepository } from "../modules/subscription/infrastructure/d1-subscription-repository.ts";
@@ -92,5 +93,27 @@ test("payment success reconciles invoice and subscription through existing lifec
   assert.equal((await service.execute(raw, await signed(raw), "request-paid")).status, "PROCESSED");
   assert.equal((await billing.findInvoiceByProviderReference("in_test"))?.props.status, "PAID");
   assert.equal((await subscriptions.findByProviderReference("stripe", "sub_test"))?.props.status, "ACTIVE");
+  context.client.close();
+});
+
+test("checkout and recurring invoice events link external IDs and import provider invoice history", async () => {
+  const context = setup();
+  context.client.database.exec("insert into customers (id,external_reference,business_name,contact_name,email,status,creation_source,created_at,updated_at) values ('b0000000-0000-4000-8000-000000000012','checkout-customer','Checkout Customer','Jordan','jordan@example.invalid','ACTIVE','ADMIN',1,1)");
+  context.client.database.exec("insert into subscriptions (id,customer_id,plan_id,status,billing_interval,currency,version,created_at,updated_at) values ('b0000000-0000-4000-8000-000000000013','b0000000-0000-4000-8000-000000000012','b0000000-0000-4000-8000-000000000002','PENDING','MONTHLY','AUD',1,1,1)");
+  context.client.database.exec("insert into billing_accounts (id,customer_id,provider,provider_customer_id,status,currency,created_at,updated_at) values ('b0000000-0000-4000-8000-000000000010','b0000000-0000-4000-8000-000000000012','stripe','cus_checkout','ACTIVE','AUD',1,1)");
+  context.client.database.exec("insert into billing_checkout_sessions (id,customer_id,subscription_id,provider,provider_session_id,idempotency_key,status,expires_at,created_at,updated_at) values ('b0000000-0000-4000-8000-000000000011','b0000000-0000-4000-8000-000000000012','b0000000-0000-4000-8000-000000000013','stripe','cs_checkout','checkout-key','OPEN',1900000000000,1,1)");
+  const subscriptions = new D1SubscriptionRepository(context.database);
+  const billing = new D1BillingRepository(context.database);
+  const references = new D1BillingProviderReferenceRepository(context.database);
+  const service = new ProcessBillingWebhookService(new StripeWebhookVerifier(SECRET), new D1BillingWebhookRepository(context.database), new ReconcileBillingEventService(subscriptions, billing, context.ids, context.clock, context.audit, references), context.ids, context.clock, context.audit);
+  const completed = stripeEvent("evt_checkout", "checkout.session.completed", { id: "cs_checkout", customer: "cus_checkout", subscription: "sub_checkout", client_reference_id: "b0000000-0000-4000-8000-000000000013", metadata: { zuno_subscription_id: "b0000000-0000-4000-8000-000000000013" } });
+  assert.equal((await service.execute(completed, await signed(completed), "request-checkout")).status, "PROCESSED");
+  assert.equal((await subscriptions.findByProviderReference("stripe", "sub_checkout"))?.props.id.value, "b0000000-0000-4000-8000-000000000013");
+  assert.equal(context.client.database.prepare("select status from billing_checkout_sessions where provider_session_id='cs_checkout'").get()?.status, "COMPLETED");
+  const invoice = stripeEvent("evt_invoice", "invoice.finalized", { id: "in_recurring", number: "STRIPE-INV-1", customer: "cus_checkout", subscription: "sub_checkout", currency: "aud", total: 8800, total_excluding_tax: 8000, amount_due: 8800, status_transitions: { finalized_at: TIMESTAMP }, due_date: TIMESTAMP + 86_400 });
+  assert.equal((await service.execute(invoice, await signed(invoice), "request-invoice")).status, "PROCESSED");
+  const imported = await billing.findInvoiceByProviderReference("in_recurring");
+  assert.deepEqual([imported?.props.status, imported?.props.subtotal.amountMinor, imported?.props.tax.amountMinor, imported?.props.total.amountMinor], ["OPEN", 8000, 800, 8800]);
+  assert.equal(imported?.props.customerId.value, "b0000000-0000-4000-8000-000000000012");
   context.client.close();
 });

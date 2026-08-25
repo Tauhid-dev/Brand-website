@@ -457,6 +457,51 @@ export const billingAccounts = sqliteTable(
   ],
 );
 
+export const billingProviderPriceReferences = sqliteTable(
+  "billing_provider_price_references",
+  {
+    id: text("id").primaryKey(),
+    provider: text("provider").notNull(),
+    subscriptionPriceId: text("subscription_price_id").notNull().references(() => subscriptionPrices.id, { onDelete: "restrict" }),
+    providerProductId: text("provider_product_id").notNull(),
+    providerPriceId: text("provider_price_id").notNull(),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("billing_provider_prices_scope_uq").on(table.provider, table.subscriptionPriceId),
+    uniqueIndex("billing_provider_prices_reference_uq").on(table.provider, table.providerPriceId),
+    check("billing_provider_prices_provider_check", sql`${table.provider} = lower(${table.provider}) and length(trim(${table.provider})) between 1 and 80`),
+    check("billing_provider_prices_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt}`),
+  ],
+);
+
+export const billingCheckoutSessions = sqliteTable(
+  "billing_checkout_sessions",
+  {
+    id: text("id").primaryKey(),
+    customerId: text("customer_id").notNull().references(() => customers.id, { onDelete: "restrict" }),
+    subscriptionId: text("subscription_id").notNull().references(() => subscriptions.id, { onDelete: "restrict" }),
+    provider: text("provider").notNull(),
+    providerSessionId: text("provider_session_id").notNull(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    status: text("status").notNull().default("OPEN"),
+    expiresAt: timestamp("expires_at").notNull(),
+    completedAt: timestamp("completed_at"),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("billing_checkout_sessions_provider_reference_uq").on(table.provider, table.providerSessionId),
+    uniqueIndex("billing_checkout_sessions_idempotency_uq").on(table.customerId, table.idempotencyKey),
+    index("billing_checkout_sessions_subscription_status_idx").on(table.subscriptionId, table.status),
+    check("billing_checkout_sessions_status_check", sql`${table.status} in ('OPEN', 'COMPLETED', 'EXPIRED')`),
+    check("billing_checkout_sessions_outcome_check", sql`(${table.status} = 'COMPLETED' and ${table.completedAt} is not null) or (${table.status} <> 'COMPLETED' and ${table.completedAt} is null)`),
+    check("billing_checkout_sessions_expiry_check", sql`${table.expiresAt} > ${table.createdAt}`),
+    check("billing_checkout_sessions_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt}`),
+  ],
+);
+
 export const invoices = sqliteTable(
   "invoices",
   {

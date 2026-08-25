@@ -11,6 +11,7 @@ export interface SubscriptionRepository {
   findByProviderReference(provider: string, externalSubscriptionId: string): Promise<Subscription | null>;
   findCurrentForCustomer(customerId: string): Promise<Subscription | null>;
   findLatestForCustomer(customerId: string): Promise<Subscription | null>;
+  linkProviderReferences(input: { subscriptionId: string; provider: string; externalCustomerId: string; externalSubscriptionId: string; at: Date }): Promise<void>;
   create(subscription: Subscription, price: SubscriptionPrice, entitlements: readonly SubscriptionEntitlement[]): Promise<void>;
   saveTransition(subscription: Subscription, closeEntitlementsAt: Date | null, restoredEntitlements: readonly SubscriptionEntitlement[]): Promise<void>;
   findEffectiveEntitlements(subscriptionId: string, at: Date): Promise<SubscriptionEntitlement[]>;

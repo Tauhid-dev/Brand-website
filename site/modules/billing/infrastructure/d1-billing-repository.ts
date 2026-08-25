@@ -27,6 +27,12 @@ export class D1BillingRepository implements BillingRepository {
     )).limit(1);
     return row ? mapAccount(row) : null;
   }
+  async findAccountByProviderReference(provider: string, providerCustomerId: string): Promise<BillingAccount | null> {
+    const [row] = await this.db.select().from(billingAccounts).where(and(
+      eq(billingAccounts.provider, provider.toLowerCase()), eq(billingAccounts.providerCustomerId, providerCustomerId),
+    )).limit(1);
+    return row ? mapAccount(row) : null;
+  }
   async saveAccount(account: BillingAccount): Promise<void> {
     const value = account.props;
     try { await this.db.insert(billingAccounts).values({

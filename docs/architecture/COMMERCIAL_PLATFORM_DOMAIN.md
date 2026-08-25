@@ -222,6 +222,8 @@ execution or sends notifications from an HTTP controller.
 | `customer_billing_profiles` | One provider-independent billing contact per customer |
 | `billing_notes` | Append-only internal billing history linked to optional subscription/invoice context |
 | `billing_webhook_events` | Phase 10 provider/event deduplication, payload hash, minimised normalized data, retry state and terminal processing evidence |
+| `billing_provider_price_references` | Phase 15 mapping from an immutable contracted price snapshot to non-secret provider product/price IDs |
+| `billing_checkout_sessions` | Phase 15 owned checkout/idempotency/completion evidence without redirect URLs, secrets or payment method data |
 
 ### Operations, agents and cross-cutting infrastructure
 
@@ -317,6 +319,10 @@ recreating every cross-table trigger that depends on the subscription table.
 Phase 12 rebuilds notification records forward-only to add WhatsApp channel
 readiness, processing leases, cancellation/read state and immutable attempt
 history; interrupted pre-upgrade processing records are safely requeued.
+Phase 15 adds provider price and checkout evidence, and replaces the subscription
+update trigger forward-only to permit one initial complete provider link while
+preserving immutable references thereafter. Stripe-specific code cannot
+recalculate catalogue, discount or entitlement policy.
 Applied migrations are never renamed or rewritten. Every migration receives
 clean-install and upgrade validation. Phase 1 intentionally has no migration
 because the target schema was not yet implemented.
