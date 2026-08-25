@@ -46,6 +46,7 @@ function normalizeStripeEvent(value: unknown): NormalizedBillingEvent {
     : subscriptionReference(item);
   const periodStartSeconds = optionalInteger(item.current_period_start);
   const periodEndSeconds = optionalInteger(item.current_period_end);
+  const metadata = item.metadata && typeof item.metadata === "object" ? item.metadata as Record<string, unknown> : {};
   return {
     provider: "stripe",
     providerEventId: id,
@@ -53,6 +54,10 @@ function normalizeStripeEvent(value: unknown): NormalizedBillingEvent {
     kind,
     externalSubscriptionId,
     externalInvoiceId,
+    externalCustomerId: optionalReference(item.customer),
+    internalSubscriptionId: optionalText(metadata.zuno_subscription_id, 255) ?? (type === "checkout.session.completed" ? optionalText(item.client_reference_id, 255) : null),
+    providerCheckoutSessionId: type === "checkout.session.completed" ? optionalText(item.id, 255) : null,
+    invoice: type.startsWith("invoice.") ? invoiceSnapshot(item, type, new Date(created * 1_000)) : null,
     periodStart: periodStartSeconds == null ? null : new Date(periodStartSeconds * 1_000),
     periodEnd: periodEndSeconds == null ? null : new Date(periodEndSeconds * 1_000),
     occurredAt: new Date(created * 1_000),
@@ -60,12 +65,38 @@ function normalizeStripeEvent(value: unknown): NormalizedBillingEvent {
 }
 
 function eventKind(type: string, item: Record<string, unknown>): BillingEventKind {
+  if (type === "checkout.session.completed") return "CHECKOUT_COMPLETED";
   if (type === "customer.subscription.deleted") return "SUBSCRIPTION_CANCELLED";
   if (type === "invoice.paid") return "PAYMENT_SUCCEEDED";
   if (type === "invoice.payment_failed") return "PAYMENT_FAILED";
+  if (["invoice.created", "invoice.finalized"].includes(type)) return "INVOICE_OPENED";
+  if (type === "invoice.marked_uncollectible") return "INVOICE_UNCOLLECTIBLE";
+  if (type === "invoice.voided") return "INVOICE_VOIDED";
   if (type === "customer.subscription.created") return subscriptionStatusKind(item.status, false);
   if (type === "customer.subscription.updated") return subscriptionStatusKind(item.status, true);
   return "UNSUPPORTED";
+}
+
+function invoiceSnapshot(item: Record<string, unknown>, type: string, occurredAt: Date) {
+  const currency = optionalText(item.currency, 3);
+  if (!currency) return null;
+  const total = optionalInteger(item.total) ?? 0;
+  const excludingTax = optionalInteger(item.total_excluding_tax);
+  const subtotal = excludingTax != null && excludingTax <= total ? excludingTax : total;
+  const status = type === "invoice.paid" ? "PAID" : type === "invoice.voided" ? "VOID" : type === "invoice.marked_uncollectible" ? "UNCOLLECTIBLE" : type === "invoice.created" ? "DRAFT" : "OPEN";
+  const transitions = item.status_transitions && typeof item.status_transitions === "object" ? item.status_transitions as Record<string, unknown> : {};
+  const issued = optionalInteger(transitions.finalized_at);
+  const paid = optionalInteger(transitions.paid_at);
+  const due = optionalInteger(item.due_date);
+  return {
+    invoiceNumber: optionalText(item.number, 120) ?? text(item.id, "invoice id", 120), status,
+    currency: currency.toUpperCase(),
+    subtotalMinor: subtotal, taxMinor: total - subtotal, totalMinor: total,
+    amountDueMinor: status === "PAID" || status === "VOID" ? 0 : optionalInteger(item.amount_due) ?? total,
+    issuedAt: issued == null ? (status === "DRAFT" ? null : occurredAt) : new Date(issued * 1_000),
+    dueAt: due == null ? null : new Date(due * 1_000),
+    paidAt: status === "PAID" ? new Date((paid ?? Math.floor(occurredAt.getTime() / 1_000)) * 1_000) : null,
+  } as const;
 }
 
 function subscriptionStatusKind(value: unknown, updated: boolean): BillingEventKind {

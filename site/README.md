@@ -43,9 +43,13 @@ The machine-readable OpenAPI 3.1 contract is available at
 authentication, pagination, idempotency and error conventions.
 
 Stripe webhook intake is enabled only when `STRIPE_WEBHOOK_SECRET` is present in
-the hosting environment. Keep that secret outside source control. Outbound
-payment execution is deliberately disabled until a reviewed provider adapter is
-configured; there is no fake payment fallback.
+the hosting environment. Outbound Checkout and subscription synchronization use
+`STRIPE_SECRET_KEY`. Test keys provide development/test-mode execution; a live
+key additionally requires `STRIPE_LIVE_ENABLED=true`, so live payment execution
+cannot be activated by supplying a key alone. Keep all values outside source
+control. Missing configuration fails closed with 503; there is no fake payment
+fallback. Configure the Stripe webhook endpoint for
+`/api/v1/webhooks/billing/stripe` with checkout, subscription and invoice events.
 
 Outbound agent provisioning is enabled only when both
 `AGENT_PLATFORM_BASE_URL` and `AGENT_PLATFORM_ACCESS_TOKEN` are supplied by the
@@ -138,13 +142,14 @@ actions tied to the current ChatGPT user. Leave public content anonymous.
 ## Database workflow
 
 Migrations `drizzle/0000_uneven_violations.sql` through
-`drizzle/0012_old_morph.sql` establish customer/catalogue, versioned
+`drizzle/0013_wooden_siren.sql` establish customer/catalogue, versioned
 pricing/quotes, discounts/promotions, subscription/entitlement/billing,
 identity/RBAC/audit, onboarding/operations/notifications, API security and the
 billing-webhook/public-rate-limit hardening records, Phase 11 billing
 operations, Phase 12 notification delivery history/recovery, Phase 13 API
 cursor-query indexes, and Phase 14 agent job leases and immutable provider
-attempt history in order. Apply them through the Sites/Cloudflare environment for the target
+attempt history, plus Phase 15 provider price/checkout references and initial
+subscription-provider linking, in order. Apply them through the Sites/Cloudflare environment for the target
 stage. Do not edit an applied migration; change `db/schema.ts` and generate the
 next forward-only migration.
 

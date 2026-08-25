@@ -165,12 +165,15 @@ observability; the admin agent workspace exposes jobs and attempts; the Phase
 
 ## Phase 15 — Stripe and billing-provider integration
 
-Status: not started.
+Status: complete on the Phase 15 feature branch; verify merged implementation
+from code before relying on this informational marker.
 
-Implement reviewed outbound Stripe/customer/subscription/invoice operations
-behind the existing provider-neutral port. Preserve internal commercial state
-as authoritative, reconcile signed events idempotently and never store raw card
-data. Do not activate live payment execution without approved configuration.
+Implemented reviewed Stripe customer, dynamic recurring-price, Checkout,
+subscription synchronization and provider-created invoice operations behind the
+provider-neutral port. Internal contracted pricing and entitlement decisions
+remain authoritative; signed events reconcile idempotently and no card data or
+secrets are stored. Test-mode configuration is supported, while live execution
+requires a separate explicit runtime enablement flag.
 
 ## Phase 16 — Production security, reliability and migration hardening
 

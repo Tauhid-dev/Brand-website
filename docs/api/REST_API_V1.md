@@ -31,6 +31,7 @@ errors 500.
 | `GET /public/plans/{planCode}` | Public | Current public terms only |
 | `POST /public/promotion-codes/validate` | Public | Non-mutating eligibility |
 | `GET /customer/account` | ChatGPT SIWC customer | Own customer only |
+| `POST /customer/billing/checkout` | ChatGPT SIWC customer | Own current subscription only |
 | `GET /customer/entitlements` | ChatGPT SIWC customer | Own customer only |
 | `PATCH /customer/notification-preferences` | ChatGPT SIWC customer | Own customer only |
 | `GET/POST /admin/customers` | ChatGPT SIWC admin | `CUSTOMER_READ` / `CUSTOMER_WRITE` |
@@ -50,6 +51,7 @@ errors 500.
 | `GET/POST /admin/subscriptions` | ChatGPT SIWC admin | `SUBSCRIPTION_READ` / `SUBSCRIPTION_WRITE` |
 | `GET/PATCH /admin/subscriptions/{subscriptionId}` | ChatGPT SIWC admin | `SUBSCRIPTION_READ` / `SUBSCRIPTION_WRITE` |
 | `POST /admin/subscriptions/{subscriptionId}/operations` | ChatGPT SIWC admin | `SUBSCRIPTION_WRITE` |
+| `POST /admin/subscriptions/{subscriptionId}/provider-sync` | ChatGPT SIWC admin | `BILLING_WRITE` |
 | `GET /admin/invoices` | ChatGPT SIWC admin | `BILLING_READ` |
 | `GET /admin/notifications` | ChatGPT SIWC admin | `OPERATIONS_READ` |
 | `GET /admin/audit-events` | ChatGPT SIWC admin | `AUDIT_READ` |
@@ -170,9 +172,16 @@ events cover subscription activation/renewal/past-due/cancellation and invoice
 payment success/failure. Reconciliation runs through billing and subscription
 application services and records immutable audit history.
 
-Outbound payment execution is intentionally absent while no production payment
-provider configuration has been approved. This endpoint does not emulate or
-claim a successful payment.
+Verified checkout events link the internal subscription to Stripe exactly once.
+Invoice events import provider-created recurring invoice totals/status into the
+internal invoice history and then use the existing lifecycle services for later
+payment changes. Raw events remain absent from D1.
+
+Outbound payment execution uses `STRIPE_SECRET_KEY` only through the
+provider-neutral application service. Customer Checkout creates/reuses the
+billing customer and a Stripe recurring price from the current internal
+contracted amount, then returns the provider URL without storing it in the
+checkout table. Live keys additionally require `STRIPE_LIVE_ENABLED=true`.
 
 ## HTTP hardening and public limits
 

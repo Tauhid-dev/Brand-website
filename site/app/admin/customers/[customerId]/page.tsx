@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { ConfirmAction, DataTable, Field, MetricGrid, Panel, PortalShell, Status } from "@/components/Portal";
 import { addBillingNoteAction, addCustomerNoteAction, subscriptionBillingOperationAction, updateBillingProfileAction } from "@/app/portal-actions";
 import { adminPortalSession, customerBillingOverview, portalReadRepository } from "../../../portal-server";
+import { ProviderSubscriptionControls } from "@/components/BillingProviderControls";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
       <Operation customerId={customerId} subscriptionId={subscriptionId} operation="CANCEL_IMMEDIATELY" label="Cancel immediately" />
       <Operation customerId={customerId} subscriptionId={subscriptionId} operation="FINALIZE_CANCELLATION" label="Finalize due cancellation" />
       <Operation customerId={customerId} subscriptionId={subscriptionId} operation="EXTEND_SERVICE" label="Temporarily extend service"><Field name="serviceExtendedUntil" label="Service available until" type="datetime-local" /><Field name="reason" label="Reason" /></Operation>
-    </div> : <p className="portal-empty">Your role has read-only subscription access.</p>}</Panel> : null}
+    </div> : <p className="portal-empty">Your role has read-only subscription access.</p>}{principal.permissions.has("BILLING_WRITE") ? <ProviderSubscriptionControls subscriptionId={subscriptionId} /> : null}</Panel> : null}
     <Panel title="Billing contact"><dl className="portal-details"><div><dt>Name</dt><dd>{billingProfile?.contactName ?? "—"}</dd></div><div><dt>Email</dt><dd>{billingProfile?.contactEmail.value ?? "—"}</dd></div><div><dt>Phone</dt><dd>{billingProfile?.contactPhone ?? "—"}</dd></div></dl>{principal.permissions.has("BILLING_WRITE") ? <ConfirmAction action={updateBillingProfileAction} label="Update billing contact"><input type="hidden" name="customerId" value={customerId} /><Field name="contactName" label="Contact name" /><Field name="contactEmail" label="Contact email" type="email" /><Field name="contactPhone" label="Contact phone" required={false} /></ConfirmAction> : null}</Panel>
     <Panel title="Invoices & reminders"><DataTable rows={customer.invoices} columns={[["invoiceNumber", "Invoice"], ["status", "Status"], ["amountDueMinor", "Amount due"], ["dueAt", "Due"], ["paidAt", "Paid"]]} /><DataTable rows={customer.reminders} columns={[["invoiceNumber", "Invoice"], ["stage", "Stage"], ["status", "Status"], ["scheduledFor", "Scheduled"]]} /></Panel>
     <Panel title="Billing notes"><DataTable rows={billing.notes as unknown as Array<Record<string, unknown>>} columns={[["createdAt", "Created"], ["body", "Note"], ["subscriptionId", "Subscription"], ["invoiceId", "Invoice"]]} />{principal.permissions.has("BILLING_WRITE") ? <ConfirmAction action={addBillingNoteAction} label="Add billing note"><input type="hidden" name="customerId" value={customerId} /><input type="hidden" name="subscriptionId" value={subscriptionId ?? ""} /><Field name="body" label="Billing note"><textarea name="body" rows={4} maxLength={4000} required /></Field></ConfirmAction> : null}</Panel>

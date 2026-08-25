@@ -8,6 +8,10 @@ export const BILLING_EVENT_KINDS = [
   "SUBSCRIPTION_PAST_DUE",
   "SUBSCRIPTION_CANCELLED",
   "SUBSCRIPTION_RENEWED",
+  "CHECKOUT_COMPLETED",
+  "INVOICE_OPENED",
+  "INVOICE_UNCOLLECTIBLE",
+  "INVOICE_VOIDED",
   "UNSUPPORTED",
 ] as const;
 
@@ -21,9 +25,19 @@ export type NormalizedBillingEvent = Readonly<{
   kind: BillingEventKind;
   externalSubscriptionId: string | null;
   externalInvoiceId: string | null;
+  externalCustomerId?: string | null;
+  internalSubscriptionId?: string | null;
+  providerCheckoutSessionId?: string | null;
+  invoice?: ProviderInvoiceSnapshot | null;
   periodStart: Date | null;
   periodEnd: Date | null;
   occurredAt: Date;
+}>;
+
+export type ProviderInvoiceSnapshot = Readonly<{
+  invoiceNumber: string; status: "DRAFT" | "OPEN" | "PAID" | "VOID" | "UNCOLLECTIBLE";
+  currency: string; subtotalMinor: number; taxMinor: number; totalMinor: number;
+  amountDueMinor: number; issuedAt: Date | null; dueAt: Date | null; paidAt: Date | null;
 }>;
 
 export type BillingWebhookEventProps = {
@@ -64,6 +78,6 @@ function normalizeEvent(input: NormalizedBillingEvent): NormalizedBillingEvent {
   if (!BILLING_EVENT_KINDS.includes(input.kind)) throw new DomainValidationError("INVALID_BILLING_EVENT_KIND", "Billing event kind is invalid.");
   if (!Number.isFinite(input.occurredAt.getTime())) throw new DomainValidationError("INVALID_BILLING_EVENT_DATE", "Billing event date is invalid.");
   if ((input.periodStart == null) !== (input.periodEnd == null) || (input.periodStart && input.periodEnd && input.periodEnd <= input.periodStart)) throw new DomainValidationError("INVALID_BILLING_PERIOD", "Billing period must have a start and a later end.");
-  if (input.kind !== "UNSUPPORTED" && !input.externalSubscriptionId && !input.externalInvoiceId) throw new DomainValidationError("BILLING_REFERENCE_REQUIRED", "Billing event requires a provider subscription or invoice reference.");
+  if (input.kind !== "UNSUPPORTED" && !input.externalSubscriptionId && !input.externalInvoiceId && !input.internalSubscriptionId) throw new DomainValidationError("BILLING_REFERENCE_REQUIRED", "Billing event requires a provider or internal subscription reference.");
   return Object.freeze({ ...input, provider, providerEventId, providerEventType, externalSubscriptionId: input.externalSubscriptionId?.trim().slice(0, 255) || null, externalInvoiceId: input.externalInvoiceId?.trim().slice(0, 255) || null });
 }
