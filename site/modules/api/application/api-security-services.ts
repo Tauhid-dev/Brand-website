@@ -5,7 +5,7 @@ import type { AdminPrincipal } from "../../identity/domain/access-control.ts";
 import type { Clock, IdGenerator } from "../../shared/application/ports.ts";
 import { AuthenticationRequiredError, AuthorizationDeniedError, DomainConflictError, DomainValidationError, RateLimitExceededError } from "../../shared/domain/errors.ts";
 import { EntityId, requireText } from "../../shared/domain/value-objects.ts";
-import { constantTimeEqual, sha256Hex } from "../../shared/infrastructure/web-crypto.ts";
+import { constantTimeEqual, sha256Hex } from "../../shared/application/web-crypto.ts";
 import type { ApiSecurityRepository } from "./ports.ts";
 import { SERVICE_SCOPES, ServiceCredential, type IdempotencyRecord, type ServicePrincipal, type ServiceScope } from "../domain/api-security.ts";
 

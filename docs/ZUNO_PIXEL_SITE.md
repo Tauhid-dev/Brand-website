@@ -12,8 +12,9 @@ Marketing content is statically rendered where practical. Only navigation,
 accordions, the deterministic AI demonstration and forms use client-side
 JavaScript. Shared service and industry templates prevent route duplication.
 The audit API validates server-side, rate-limits, applies a honeypot and
-returns an honest `delivered: false` development result without persisting or
-logging personal data.
+delegates through a typed application port to a configuration-gated HTTPS lead
+destination. It fails closed when delivery is unavailable, does not log or
+persist form content, and reports success only after the destination accepts it.
 
 ## Local development and validation
 
@@ -36,9 +37,11 @@ python3 -m unittest discover -s tests -v
 
 ## Brand and rebranding
 
-Edit `site/lib/config.ts` to change the brand name, short name, legal name,
-ABN, tagline, domain, region, contact details, social links, currency, GST
-message, logo paths, analytics identifier and calls to action. Replace
+Edit `site/lib/config.ts` for versioned brand content, packages, currency, GST
+message, logo paths and calls to action. Supply deployment-specific legal name,
+ABN, domain, contact details, social links and analytics identifier through the
+typed `NEXT_PUBLIC_*` values listed in `site/.env.example`. Unconfigured optional
+facts are omitted rather than replaced by invented public details. Replace
 `site/public/favicon.svg` and `site/public/og.png` with approved assets.
 
 Search the repository for the current name after a rebrand, then separately
@@ -75,15 +78,16 @@ the central GST disclosure. Confirm every amount and inclusion before launch.
 
 ## Forms and integrations
 
-The current adapter in `site/app/api/audit/route.ts` validates both audit and
-contact requests but intentionally does not deliver them. Before launch,
-replace the development return path with a typed CRM or backend adapter:
+`site/app/api/audit/route.ts` validates both audit and contact requests and calls
+`SubmitWebsiteLeadService`. `HttpWebsiteLeadDelivery` posts the field-minimised
+contract to `LEAD_DELIVERY_URL` with `LEAD_DELIVERY_TOKEN` and the request ID as
+an idempotency key. Before launch:
 
-1. Keep validation, normalisation, rate limiting and the honeypot at the edge.
-2. Pass consent timestamp, consent choices and source separately.
-3. Do not log form content or include it in analytics.
-4. Return a delivery identifier only after the destination confirms receipt.
-5. Add contract tests for timeout, rejection, retry and redaction.
+1. Configure an HTTPS destination that accepts the documented JSON contract.
+2. Store the bearer token only in the hosting secret store.
+3. Confirm destination idempotency, retention, access control and incident handling.
+4. Exercise accepted, rejected and timeout paths in the deployed stage.
+5. Keep form contents out of analytics, application logs and audit snapshots.
 
 ## Analytics
 
@@ -95,7 +99,7 @@ contents.
 
 ## SEO checklist
 
-- Replace `brand.domain` with the production HTTPS domain.
+- Confirm `NEXT_PUBLIC_SITE_URL`; the safe canonical default is `https://zunopixel.com.au`.
 - Confirm unique page titles, descriptions and canonical URLs.
 - Validate Organisation/ProfessionalService, Service, breadcrumb and visible
   FAQ structured data before adding any further schema.
@@ -111,13 +115,13 @@ Worker deployment. Build with `npm run build`, save the exact source state as a
 Sites version, and deploy only that saved version. Environment values belong in
 the hosting environment, never in source control.
 
-Rollback means redeploying the previous known-good saved version. The audit
-form remains non-delivering until its external adapter is configured.
+Rollback means redeploying the previous known-good saved version. The lead API
+fails closed if its external delivery configuration is absent or unavailable.
 
-The detailed Phase 10 release gate, billing-webhook activation, monitoring,
-retention, migration failure and application rollback procedure is in
-`docs/operations/LAUNCH_AND_ROLLBACK.md`. Migration 0007 is forward-only and is
-left in place during an application rollback so webhook evidence is preserved.
+The current release gate, provider activation, monitoring, retention, migration
+failure and application rollback procedure is in
+`docs/operations/LAUNCH_AND_ROLLBACK.md`. All migrations through 0014 are
+forward-only and remain in place during an application rollback.
 
 ## Asset replacement
 
@@ -128,10 +132,10 @@ provide intrinsic dimensions and useful alt text, lazy-load below-the-fold
 media, and avoid customer logos or recognisable work without written approval.
 Keep the CSS visual as a fallback when photography is unavailable.
 
-## Known placeholders and legal review
+## External launch configuration and review
 
-- Legal entity, ABN, email, phone, domain and social URLs.
-- Final logo, favicon, brand name and approved photography.
+- Legal entity, ABN, verified contact details and social URLs.
+- Final approved logo, favicon and photography, if different from current assets.
 - CRM/form delivery endpoint and operational support destination.
 - Analytics provider, measurement identifiers and consent handling.
 - Search Console and WhatsApp Business Platform configuration.
@@ -140,10 +144,10 @@ Keep the CSS visual as a fallback when photography is unavailable.
 
 ## Launch checklist
 
-- [ ] Replace placeholder contact information.
+- [ ] Configure verified contact information.
 - [ ] Confirm legal entity and ABN.
 - [ ] Confirm GST status and pricing.
-- [ ] Add the real domain.
+- [ ] Verify the canonical domain and DNS.
 - [ ] Add approved logo, favicon and imagery.
 - [ ] Configure and test form delivery.
 - [ ] Configure analytics and consent.

@@ -165,8 +165,7 @@ observability; the admin agent workspace exposes jobs and attempts; the Phase
 
 ## Phase 15 — Stripe and billing-provider integration
 
-Status: complete on the Phase 15 feature branch; verify merged implementation
-from code before relying on this informational marker.
+Status: complete and verified on merged `main` (26 August 2026).
 
 Implemented reviewed Stripe customer, dynamic recurring-price, Checkout,
 subscription synchronization and provider-created invoice operations behind the
@@ -177,8 +176,7 @@ requires a separate explicit runtime enablement flag.
 
 ## Phase 16 — Production security, reliability and migration hardening
 
-Status: complete on the Phase 16 feature branch; verify merged implementation
-from code before relying on this informational marker.
+Status: complete and verified on merged `main` (26 August 2026).
 
 Complete threat-led security controls, operational recovery, observability,
 data retention, concurrency and failure testing, migration rehearsal and
@@ -186,8 +184,13 @@ production rollback evidence across the commercial platform.
 
 ## Phase 17 — Final architecture and release readiness
 
-Status: not started.
+Status: complete on the Phase 17 feature branch (26 August 2026); verify the
+merged implementation from code before relying on this informational marker.
 
-Verify bounded-context ownership, eliminate duplication, reconcile all
-documentation with implemented code, complete release evidence and publish a
-go/no-go readiness assessment without weakening the modular-monolith boundary.
+Verified bounded-context ownership and acyclic inward dependencies; added an
+automated architecture-regression gate and release CI; removed fake public
+contact/legal values; replaced the non-delivering form stub with a typed,
+configuration-gated HTTPS adapter; updated the vulnerable development toolchain;
+reconciled migrations and operational documentation; and published the code-GO,
+deployment-CONDITIONAL release assessment. Phase 17 adds no schema migration or
+new commercial product feature.

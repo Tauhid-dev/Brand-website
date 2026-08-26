@@ -108,13 +108,14 @@ export function AuditForm({ compact = false }: { compact?: boolean }) {
       setState("success"); track("audit_form_completed", { source: compact ? "contact" : "growth_audit" }); form.reset();
     } catch {
       setState("error");
-      setErrors({ form: "The development form could not be saved. Please use the configured email or phone contact instead." });
+      setErrors({ form: "Your enquiry could not be delivered. Please try again later or use a listed contact method." });
     }
   }
-  if (state === "success") return <div className="form-success" role="status"><span aria-hidden="true">✓</span><h2>Your audit request is ready for review.</h2><p>This development build stores nothing and sends nothing externally. Configure the CRM adapter before launch.</p></div>;
+  if (state === "success") return <div className="form-success" role="status"><span aria-hidden="true">✓</span><h2>Your request has been received.</h2><p>Thank you. The team can now review your enquiry and follow up using your preferred contact method.</p></div>;
   return (
     <form className="audit-form" onSubmit={submit} noValidate onFocus={() => track("audit_form_started")}>
       {errors.form && <p className="form-error" role="alert">{errors.form}</p>}
+      <input type="hidden" name="source" value={compact ? "website_contact" : "website_growth_audit"} />
       <div className="honeypot" aria-hidden="true"><label>Company fax<input name="companyFax" tabIndex={-1} autoComplete="off" /></label></div>
       <Field name="contactName" label="Contact name" error={errors.contactName} />
       <Field name="businessName" label="Business name" error={errors.businessName} />
@@ -134,7 +135,7 @@ export function AuditForm({ compact = false }: { compact?: boolean }) {
       <label className="check full"><input type="checkbox" name="privacyConsent" value="accepted" aria-describedby={errors.privacyConsent ? "privacy-error" : undefined} />I agree to my information being used to respond to this enquiry. <a href="/privacy">Privacy policy</a>{errors.privacyConsent && <small id="privacy-error" className="field-error">{errors.privacyConsent}</small>}</label>
       <label className="check full"><input type="checkbox" name="marketingConsent" value="accepted" />I would like occasional growth insights. Optional.</label>
       <button className="button full" disabled={state === "submitting"}>{state === "submitting" ? "Preparing request…" : compact ? "Send Enquiry" : "Request My Free Growth Audit"}</button>
-      <p className="form-note full">Do not include sensitive information. This development adapter does not deliver submissions externally.</p>
+      <p className="form-note full">Do not include passwords, payment details or other sensitive information. Submission succeeds only after the secure delivery destination accepts it.</p>
     </form>
   );
 }
