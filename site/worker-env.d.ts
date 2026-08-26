@@ -9,6 +9,8 @@ declare global {
       AGENT_PLATFORM_ACCESS_TOKEN?: string;
       LEAD_DELIVERY_URL?: string;
       LEAD_DELIVERY_TOKEN?: string;
+      DATABASE_RUNTIME?: string;
+      IDENTITY_RUNTIME?: string;
     }
   }
 
@@ -21,6 +23,8 @@ declare global {
     AGENT_PLATFORM_ACCESS_TOKEN?: string;
     LEAD_DELIVERY_URL?: string;
     LEAD_DELIVERY_TOKEN?: string;
+    DATABASE_RUNTIME?: string;
+    IDENTITY_RUNTIME?: string;
   }
 }
 

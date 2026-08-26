@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { isValidElement, type ReactNode } from "react";
-import { chatGPTSignOutPath } from "@/app/chatgpt-auth";
+import { resolveIdentityRuntime, runtimeSignOutPath, standaloneLogoutToken } from "@/app/identity-runtime";
 
 export const adminNav = [
   ["/admin", "Dashboard"], ["/admin/customers", "Customers"], ["/admin/catalogue", "Catalogue"],
@@ -8,8 +8,10 @@ export const adminNav = [
   ["/admin/billing", "Billing"], ["/admin/operations", "Operations"], ["/admin/agents", "Agent integration"], ["/admin/audit", "Audit log"], ["/admin/settings", "Settings"],
 ] as const;
 
-export function PortalShell({ kind, title, subtitle, user, children }: { kind: "Customer" | "Admin"; title: string; subtitle: string; user: string; children: ReactNode }) {
-  return <div className="portal"><aside className="portal-sidebar"><Link className="portal-brand" href={kind === "Admin" ? "/admin" : "/account"}>Zuno Pixel <small>{kind} portal</small></Link><nav aria-label={`${kind} portal`}>{kind === "Admin" ? adminNav.map(([href, label]) => <Link key={href} href={href}>{label}</Link>) : <><Link href="/account">Account overview</Link><a href="#onboarding">Onboarding</a><a href="#billing">Billing</a><a href="#notifications">Notifications</a></>}</nav><div className="portal-user"><span>{user}</span><a href={chatGPTSignOutPath("/")}>Sign out</a></div></aside><section className="portal-content"><header className="portal-heading"><div><span className="eyebrow">{kind} workspace</span><h1>{title}</h1><p>{subtitle}</p></div></header>{children}</section></div>;
+export async function PortalShell({ kind, title, subtitle, user, children }: { kind: "Customer" | "Admin"; title: string; subtitle: string; user: string; children: ReactNode }) {
+  const oidc = resolveIdentityRuntime() === "oidc";
+  const csrfToken = oidc ? await standaloneLogoutToken() : null;
+  return <div className="portal"><aside className="portal-sidebar"><Link className="portal-brand" href={kind === "Admin" ? "/admin" : "/account"}>Zuno Pixel <small>{kind} portal</small></Link><nav aria-label={`${kind} portal`}>{kind === "Admin" ? adminNav.map(([href, label]) => <Link key={href} href={href}>{label}</Link>) : <><Link href="/account">Account overview</Link><a href="#onboarding">Onboarding</a><a href="#billing">Billing</a><a href="#notifications">Notifications</a></>}</nav><div className="portal-user"><span>{user}</span>{oidc ? <form action={runtimeSignOutPath("/")} method="post"><input name="csrfToken" type="hidden" value={csrfToken ?? ""} /><button className="link-button" type="submit">Sign out</button></form> : <a href={runtimeSignOutPath("/")}>Sign out</a>}</div></aside><section className="portal-content"><header className="portal-heading"><div><span className="eyebrow">{kind} workspace</span><h1>{title}</h1><p>{subtitle}</p></div></header>{children}</section></div>;
 }
 
 export function MetricGrid({ items }: { items: Array<[string, string | number]> }) {

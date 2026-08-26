@@ -1,11 +1,11 @@
 import { getDb, type AppDatabase } from "@/db";
-import { getChatGPTUser } from "@/app/chatgpt-auth";
+import { getRuntimeIdentity } from "@/app/identity-runtime";
 import { AuditService } from "@/modules/audit/application/audit-service";
 import type { AuditRecorder } from "@/modules/audit/application/ports";
 import { AUDIT_ACTIONS } from "@/modules/audit/domain/audit-event";
 import { D1AuditEventRepository } from "@/modules/audit/infrastructure/d1-audit-event-repository";
 import { CustomerAuthenticationService, AdminAuthenticationService, AdminAuthorizationGuard } from "@/modules/identity/application/access-control-services";
-import { CHATGPT_IDENTITY_PROVIDER, createExternalIdentity, type AdminPrincipal, type CustomerPrincipal, type PermissionCode } from "@/modules/identity/domain/access-control";
+import { type AdminPrincipal, type CustomerPrincipal, type PermissionCode } from "@/modules/identity/domain/access-control";
 import { D1AdminAccessRepository } from "@/modules/identity/infrastructure/d1-admin-access-repository";
 import { D1CustomerIdentityRepository } from "@/modules/customer/infrastructure/d1-customer-repositories";
 import { D1ApiSecurityRepository } from "@/modules/api/infrastructure/d1-api-security-repository";
@@ -62,4 +62,4 @@ async function enforcePrincipalRateLimit(runtime: ApiRuntime, actorType: "custom
 }
 
 function auditFor(db: AppDatabase, ids: CryptoUuidGenerator, clock: SystemClock, metadata: Omit<RequestContext, "actor">, actor: RequestActor) { return new AuditService(new D1AuditEventRepository(db), ids, clock, { ...metadata, actor }); }
-async function externalIdentity() { const user = await getChatGPTUser(); if (!user) throw new AuthenticationRequiredError(); return createExternalIdentity({ provider: CHATGPT_IDENTITY_PROVIDER, externalSubject: user.externalSubject, email: user.email, displayName: user.displayName }); }
+async function externalIdentity() { const identity = await getRuntimeIdentity(); if (!identity) throw new AuthenticationRequiredError(); return identity; }

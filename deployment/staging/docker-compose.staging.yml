@@ -1,21 +1,23 @@
 name: ${COMPOSE_PROJECT_NAME:-zunopixel-staging}
 
+x-zuno-build: &zuno-build
+  context: ${ZUNO_PIXEL_APP_DIR:-/opt/zunopixel/app/site}
+  dockerfile: ${ZUNO_PIXEL_DOCKERFILE:-/opt/zunopixel/staging/Dockerfile.web}
+  args:
+    NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3100}
+    NEXT_PUBLIC_LEGAL_NAME: ${NEXT_PUBLIC_LEGAL_NAME:-}
+    NEXT_PUBLIC_ABN: ${NEXT_PUBLIC_ABN:-}
+    NEXT_PUBLIC_SUPPORT_EMAIL: ${NEXT_PUBLIC_SUPPORT_EMAIL:-}
+    NEXT_PUBLIC_SALES_EMAIL: ${NEXT_PUBLIC_SALES_EMAIL:-}
+    NEXT_PUBLIC_PHONE: ${NEXT_PUBLIC_PHONE:-}
+    NEXT_PUBLIC_LINKEDIN_URL: ${NEXT_PUBLIC_LINKEDIN_URL:-}
+    NEXT_PUBLIC_INSTAGRAM_URL: ${NEXT_PUBLIC_INSTAGRAM_URL:-}
+    NEXT_PUBLIC_FACEBOOK_URL: ${NEXT_PUBLIC_FACEBOOK_URL:-}
+    NEXT_PUBLIC_GA4_MEASUREMENT_ID: ${NEXT_PUBLIC_GA4_MEASUREMENT_ID:-}
+
 services:
   web:
-    build:
-      context: ${ZUNO_PIXEL_APP_DIR:-/opt/zunopixel/app/site}
-      dockerfile: ${ZUNO_PIXEL_DOCKERFILE:-/opt/zunopixel/staging/Dockerfile.web}
-      args:
-        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3100}
-        NEXT_PUBLIC_LEGAL_NAME: ${NEXT_PUBLIC_LEGAL_NAME:-}
-        NEXT_PUBLIC_ABN: ${NEXT_PUBLIC_ABN:-}
-        NEXT_PUBLIC_SUPPORT_EMAIL: ${NEXT_PUBLIC_SUPPORT_EMAIL:-}
-        NEXT_PUBLIC_SALES_EMAIL: ${NEXT_PUBLIC_SALES_EMAIL:-}
-        NEXT_PUBLIC_PHONE: ${NEXT_PUBLIC_PHONE:-}
-        NEXT_PUBLIC_LINKEDIN_URL: ${NEXT_PUBLIC_LINKEDIN_URL:-}
-        NEXT_PUBLIC_INSTAGRAM_URL: ${NEXT_PUBLIC_INSTAGRAM_URL:-}
-        NEXT_PUBLIC_FACEBOOK_URL: ${NEXT_PUBLIC_FACEBOOK_URL:-}
-        NEXT_PUBLIC_GA4_MEASUREMENT_ID: ${NEXT_PUBLIC_GA4_MEASUREMENT_ID:-}
+    build: *zuno-build
     image: ${ZUNO_PIXEL_IMAGE:-zunopixel-staging-web:local}
     init: true
     restart: unless-stopped
@@ -23,6 +25,17 @@ services:
       NODE_ENV: production
       HOSTNAME: 0.0.0.0
       PORT: "3000"
+      DATABASE_RUNTIME: postgres
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set in .env.staging}
+      DATABASE_POOL_SIZE: ${DATABASE_POOL_SIZE:-10}
+      IDENTITY_RUNTIME: oidc
+      APP_BASE_URL: ${APP_BASE_URL:?APP_BASE_URL must be set in .env.staging}
+      OIDC_ISSUER: ${OIDC_ISSUER:?OIDC_ISSUER must be set in .env.staging}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:?OIDC_CLIENT_ID must be set in .env.staging}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:?OIDC_CLIENT_SECRET must be set in .env.staging}
+      OIDC_PROVIDER_ID: ${OIDC_PROVIDER_ID:?OIDC_PROVIDER_ID must be set in .env.staging}
+      OIDC_SESSION_SECRET: ${OIDC_SESSION_SECRET:?OIDC_SESSION_SECRET must be set in .env.staging}
+      OIDC_SESSION_TTL_SECONDS: ${OIDC_SESSION_TTL_SECONDS:-28800}
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3100}
       NEXT_PUBLIC_LEGAL_NAME: ${NEXT_PUBLIC_LEGAL_NAME:-}
       NEXT_PUBLIC_ABN: ${NEXT_PUBLIC_ABN:-}
@@ -42,8 +55,9 @@ services:
       AGENT_PLATFORM_ACCESS_TOKEN: ${AGENT_PLATFORM_ACCESS_TOKEN:-}
     ports:
       - "127.0.0.1:${ZUNO_WEB_HOST_PORT:-3100}:3000"
-    volumes:
-      - d1-data:/app/.wrangler
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     networks:
       - edge
       - data
@@ -57,6 +71,20 @@ services:
       timeout: 5s
       retries: 8
       start_period: 45s
+
+  migrate:
+    build: *zuno-build
+    image: ${ZUNO_PIXEL_IMAGE:-zunopixel-staging-web:local}
+    restart: "no"
+    command: ["npm", "run", "postgres:migrate"]
+    environment:
+      DATABASE_RUNTIME: postgres
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set in .env.staging}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - data
 
   postgres:
     image: postgres:17-alpine
@@ -75,22 +103,6 @@ services:
       timeout: 5s
       retries: 10
 
-  redis:
-    image: redis:7.4-alpine
-    restart: unless-stopped
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set in .env.staging}
-    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
-    volumes:
-      - redis-data:/data
-    networks:
-      - data
-    healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
 networks:
   edge:
     driver: bridge
@@ -99,6 +111,4 @@ networks:
     internal: true
 
 volumes:
-  d1-data:
   postgres-data:
-  redis-data:

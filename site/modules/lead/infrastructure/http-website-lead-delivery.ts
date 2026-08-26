@@ -1,5 +1,6 @@
 import type { DeliverableWebsiteLead, WebsiteLeadDelivery } from "../application/website-lead-delivery.ts";
 import { ServiceUnavailableError } from "../../shared/domain/errors.ts";
+import { runtimeEnv } from "../../../db/runtime-env.ts";
 
 type Fetch = typeof fetch;
 
@@ -36,7 +37,7 @@ export class HttpWebsiteLeadDelivery implements WebsiteLeadDelivery {
 }
 
 export async function configuredWebsiteLeadDelivery(): Promise<WebsiteLeadDelivery> {
-  const { env } = await import("cloudflare:workers");
+  const env = await runtimeEnv();
   const endpoint = env.LEAD_DELIVERY_URL?.trim();
   const token = env.LEAD_DELIVERY_TOKEN?.trim();
   if (!endpoint || !token) throw unavailable("LEAD_DELIVERY_NOT_CONFIGURED");

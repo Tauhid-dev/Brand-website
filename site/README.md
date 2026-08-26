@@ -166,6 +166,20 @@ The complete environment inventory is in `.env.example`. Empty values are
 intentional; secrets must be supplied through the hosting secret store and must
 never be committed.
 
+## Standalone OCI runtime
+
+Phase 18 preserves the Sites/D1/SIWC path and adds explicit standalone
+PostgreSQL/OIDC composition. Set `DATABASE_RUNTIME=postgres` and
+`IDENTITY_RUNTIME=oidc`; apply `npm run postgres:migrate` before startup. The
+PostgreSQL driver implements the existing repository execution contract, so
+controllers and domain/application services do not branch on provider.
+
+See `docs/architecture/PHASE_18_OCI_PORTABILITY.md`,
+`docs/operations/STANDALONE_OCI_RUNTIME.md` and the disposable wrapper README
+for configuration, migration, first-admin, backup, restore and switching
+procedures. Runtime database/OIDC credentials belong only in the target secret
+store.
+
 Development fixtures include clearly fictional catalogue/customer examples and
 the four initial AUD price sets. They are exported separately from production
 paths and require an explicit caller, preventing accidental production seeding.

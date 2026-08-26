@@ -17,12 +17,15 @@ class StagingWrapperTests(unittest.TestCase):
         self.assertNotIn(":5432", self.compose)
         self.assertNotIn(":6379", self.compose)
 
-    def test_data_services_are_project_private_and_use_distinct_storage(self) -> None:
+    def test_postgres_is_project_private_and_migrations_gate_web(self) -> None:
         self.assertIn("  postgres:\n", self.compose)
-        self.assertIn("  redis:\n", self.compose)
+        self.assertNotIn("  redis:\n", self.compose)
         self.assertIn("    internal: true", self.compose)
         self.assertIn("postgres-data:/var/lib/postgresql/data", self.compose)
-        self.assertIn("redis-data:/data", self.compose)
+        self.assertIn("  migrate:\n", self.compose)
+        self.assertIn("condition: service_completed_successfully", self.compose)
+        self.assertIn("DATABASE_RUNTIME: postgres", self.compose)
+        self.assertIn("IDENTITY_RUNTIME: oidc", self.compose)
 
     def test_staging_secrets_are_ignored(self) -> None:
         self.assertEqual((STAGING / ".gitignore").read_text().strip(), ".env.staging")

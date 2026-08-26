@@ -22,6 +22,22 @@ jobs:
 
   platform:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: zunopixel_test
+          POSTGRES_USER: zunopixel_test
+          POSTGRES_PASSWORD: test-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U zunopixel_test -d zunopixel_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_POSTGRES_URL: postgresql://zunopixel_test:test-only-password@127.0.0.1:5432/zunopixel_test
     defaults:
       run:
         working-directory: site

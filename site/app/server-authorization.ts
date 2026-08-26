@@ -1,12 +1,10 @@
-import { requireChatGPTUser } from "./chatgpt-auth.ts";
+import { requireRuntimeIdentity } from "./identity-runtime.ts";
 import type {
   AdminAuthenticationService,
   AdminAuthorizationGuard,
   CustomerAuthenticationService,
 } from "../modules/identity/application/access-control-services.ts";
 import {
-  CHATGPT_IDENTITY_PROVIDER,
-  createExternalIdentity,
   type AdminPrincipal,
   type CustomerPrincipal,
   type PermissionCode,
@@ -16,13 +14,7 @@ export async function requireCustomerSession(
   returnTo: string,
   authentication: CustomerAuthenticationService,
 ): Promise<CustomerPrincipal> {
-  const user = await requireChatGPTUser(returnTo);
-  return authentication.execute(createExternalIdentity({
-    provider: CHATGPT_IDENTITY_PROVIDER,
-    externalSubject: user.externalSubject,
-    email: user.email,
-    displayName: user.displayName,
-  }));
+  return authentication.execute(await requireRuntimeIdentity(returnTo));
 }
 
 export async function requireAdminSession(
@@ -31,13 +23,7 @@ export async function requireAdminSession(
   authentication: AdminAuthenticationService,
   authorization: AdminAuthorizationGuard,
 ): Promise<AdminPrincipal> {
-  const user = await requireChatGPTUser(returnTo);
-  const principal = await authentication.execute(createExternalIdentity({
-    provider: CHATGPT_IDENTITY_PROVIDER,
-    externalSubject: user.externalSubject,
-    email: user.email,
-    displayName: user.displayName,
-  }));
+  const principal = await authentication.execute(await requireRuntimeIdentity(returnTo));
   authorization.requirePermission(principal, permission);
   return principal;
 }
