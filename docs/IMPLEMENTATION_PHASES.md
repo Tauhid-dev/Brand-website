@@ -194,3 +194,16 @@ configuration-gated HTTPS adapter; updated the vulnerable development toolchain;
 reconciled migrations and operational documentation; and published the code-GO,
 deployment-CONDITIONAL release assessment. Phase 17 adds no schema migration or
 new commercial product feature.
+
+## Phase 18 — Standalone OCI runtime portability
+
+Status: complete on the Phase 18 feature branch (26 August 2026); verify the
+merged implementation and CI evidence before relying on this informational
+marker.
+
+Acceptance criteria: explicit D1/PostgreSQL and SIWC/OIDC runtime selection;
+unchanged domain/application and D1 migration lineages; generated PostgreSQL
+schema parity with transactional checksummed migrations; standalone encrypted
+sessions, PKCE/state/nonce, CSRF-protected logout, customer registration and
+one-time audited SUPER_ADMIN CLI bootstrap; migration-gated private-PostgreSQL
+staging; full D1 regression suite and PostgreSQL 17 integration coverage.

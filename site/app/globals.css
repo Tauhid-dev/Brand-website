@@ -221,6 +221,8 @@ h3 { font-size: 1.45rem; }
 .portal-sidebar nav a:hover { background: rgba(48,230,212,.11); color: var(--cyan); }
 .portal-user { display: grid; gap: 5px; padding: 20px 10px 0; margin-top: auto; border-top: 1px solid rgba(255,255,255,.1); font-size: .75rem; overflow-wrap: anywhere; }
 .portal-user a { color: var(--cyan); font-weight: 800; }
+.portal-user form { margin: 0; }
+.link-button { appearance: none; border: 0; padding: 0; background: transparent; color: var(--cyan); font: inherit; font-weight: 800; cursor: pointer; }
 .portal-content { min-width: 0; padding: 48px clamp(22px, 4vw, 60px) 80px; }
 .portal-heading { margin-bottom: 30px; }
 .portal-heading h1 { margin: 13px 0 8px; font-size: clamp(2.3rem, 4vw, 4rem); }

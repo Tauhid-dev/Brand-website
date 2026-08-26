@@ -2,6 +2,7 @@ import type { AgentProviderSnapshot, AgentProvisioner } from "../application/por
 import { AgentProviderError } from "../application/provider-failure.ts";
 import type { AgentOperation } from "../domain/agent-provisioning.ts";
 import { DomainValidationError, ServiceUnavailableError } from "../../shared/domain/errors.ts";
+import { runtimeEnv } from "../../../db/runtime-env.ts";
 
 type Fetch = typeof fetch;
 type ProviderConfig = { baseUrl: string; accessToken: string; timeoutMs?: number };
@@ -48,7 +49,7 @@ export class HttpAgentPlatformProvisioner implements AgentProvisioner {
 }
 
 export async function configuredAgentProvisioner() {
-  const { env } = await import("cloudflare:workers");
+  const env = await runtimeEnv();
   const baseUrl = env.AGENT_PLATFORM_BASE_URL?.trim(); const accessToken = env.AGENT_PLATFORM_ACCESS_TOKEN?.trim();
   if (!baseUrl || !accessToken) throw new ServiceUnavailableError("AGENT_PLATFORM_NOT_CONFIGURED", "Agent platform integration is not configured.");
   return new HttpAgentPlatformProvisioner({ baseUrl, accessToken });
