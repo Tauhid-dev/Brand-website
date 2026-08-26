@@ -17,6 +17,7 @@ import { SubscriptionLifecycleService } from "@/modules/subscription/application
 import { D1SubscriptionRepository } from "@/modules/subscription/infrastructure/d1-subscription-repository";
 import { DomainValidationError } from "@/modules/shared/domain/errors";
 import { actionRuntime, adminPortalSession, customerPortalSession } from "./portal-server";
+import { systemHardeningServices } from "./system-hardening-runtime";
 
 function requireConfirmation(data: FormData) {
   if (data.get("confirmed") !== "yes") throw new DomainValidationError("CONFIRMATION_REQUIRED", "Explicit confirmation is required.");
@@ -143,5 +144,13 @@ export async function reconcileCommercialNotificationsAction(data: FormData) {
   const runtime = await actionRuntime({ type: "ADMIN", id: principal.adminUserId });
   const repository = new D1NotificationRepository(runtime.db);
   await new CommercialNotificationOrchestrationService(new D1CommercialNotificationSource(runtime.db), new QueueNotificationService(repository, runtime.ids, runtime.clock, runtime.audit), runtime.clock).reconcile();
+  revalidatePath("/admin/operations");
+}
+
+export async function runSystemMaintenanceAction(data: FormData) {
+  requireConfirmation(data);
+  const principal = await adminPortalSession("/admin/operations", "OPERATIONS_WRITE");
+  const runtime = await actionRuntime({ type: "ADMIN", id: principal.adminUserId });
+  await systemHardeningServices(runtime, runtime.audit).maintenance.execute(principal.adminUserId);
   revalidatePath("/admin/operations");
 }

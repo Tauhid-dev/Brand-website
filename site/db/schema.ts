@@ -1283,3 +1283,28 @@ export const apiRateLimits = sqliteTable(
     check("api_rate_limits_timestamps_check", sql`${table.updatedAt} >= ${table.windowStartedAt}`),
   ],
 );
+
+export const systemMaintenanceRuns = sqliteTable(
+  "system_maintenance_runs",
+  {
+    id: text("id").primaryKey(),
+    operation: text("operation").notNull(),
+    status: text("status").notNull(),
+    requestedByAdminUserId: text("requested_by_admin_user_id").notNull().references(() => adminUsers.id, { onDelete: "restrict" }),
+    policySnapshot: text("policy_snapshot_json", { mode: "json" }).$type<Record<string, number>>().notNull(),
+    summary: text("summary_json", { mode: "json" }).$type<Record<string, number>>(),
+    failureCode: text("failure_code"),
+    startedAt: timestamp("started_at").notNull(),
+    completedAt: timestamp("completed_at"),
+    createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("system_maintenance_runs_active_operation_uq").on(table.operation).where(sql`${table.status} = 'IN_PROGRESS'`),
+    index("system_maintenance_runs_status_created_idx").on(table.status, table.createdAt),
+    check("system_maintenance_runs_operation_check", sql`${table.operation} = 'RETENTION_AND_RECOVERY'`),
+    check("system_maintenance_runs_status_check", sql`${table.status} in ('IN_PROGRESS', 'SUCCEEDED', 'FAILED')`),
+    check("system_maintenance_runs_outcome_check", sql`(${table.status} = 'IN_PROGRESS' and ${table.completedAt} is null and ${table.summary} is null and ${table.failureCode} is null) or (${table.status} = 'SUCCEEDED' and ${table.completedAt} is not null and ${table.summary} is not null and ${table.failureCode} is null) or (${table.status} = 'FAILED' and ${table.completedAt} is not null and ${table.summary} is null and ${table.failureCode} is not null)`),
+    check("system_maintenance_runs_timestamps_check", sql`${table.updatedAt} >= ${table.createdAt} and (${table.completedAt} is null or ${table.completedAt} >= ${table.startedAt})`),
+  ],
+);

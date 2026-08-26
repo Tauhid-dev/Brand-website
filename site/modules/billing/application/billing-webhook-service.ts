@@ -32,7 +32,7 @@ export class ProcessBillingWebhookService {
       return { duplicate: false, status } as const;
     } catch (error) {
       const failedAt = this.clock.now();
-      const failureCode = stableFailureCode(error);
+      const failureCode = billingWebhookFailureCode(error);
       const nextAttemptAt = claim.event.props.attemptCount < claim.event.props.maxAttempts ? new Date(failedAt.getTime() + 60_000 * 2 ** (claim.event.props.attemptCount - 1)) : null;
       await this.repository.fail(claim.event.props.id.value, failureCode, nextAttemptAt, failedAt);
       await this.audit.record({ action: AUDIT_ACTIONS.billingWebhookFailed, entityType: "BILLING_WEBHOOK_EVENT", entityId: claim.event.props.id.value, after: { provider: claim.event.props.event.provider, providerEventId: claim.event.props.event.providerEventId, kind: claim.event.props.event.kind, failureCode, nextAttemptAt } });
@@ -41,7 +41,7 @@ export class ProcessBillingWebhookService {
   }
 }
 
-function stableFailureCode(error: unknown): string {
+export function billingWebhookFailureCode(error: unknown): string {
   if (error && typeof error === "object" && "code" in error && typeof error.code === "string" && /^[A-Z][A-Z0-9_]{0,119}$/.test(error.code)) return error.code;
   return "BILLING_WEBHOOK_PROCESSING_FAILED";
 }

@@ -1,4 +1,4 @@
-import { and, eq, lte, lt, sql } from "drizzle-orm";
+import { and, asc, eq, lte, lt, sql } from "drizzle-orm";
 import type { AppDatabase } from "../../../db/index.ts";
 import { billingWebhookEvents } from "../../../db/schema.ts";
 import { DomainConflictError } from "../../shared/domain/errors.ts";
@@ -32,6 +32,17 @@ export class D1BillingWebhookRepository implements BillingWebhookRepository {
     }
   }
 
+  async claimNextReady(now: Date): Promise<BillingWebhookEvent | null> {
+    const [candidate] = await this.db.select({ id: billingWebhookEvents.id }).from(billingWebhookEvents)
+      .where(and(eq(billingWebhookEvents.status, "FAILED"), lte(billingWebhookEvents.nextAttemptAt, now), lt(billingWebhookEvents.attemptCount, billingWebhookEvents.maxAttempts)))
+      .orderBy(asc(billingWebhookEvents.nextAttemptAt), asc(billingWebhookEvents.id)).limit(1);
+    if (!candidate) return null;
+    const result = await this.db.update(billingWebhookEvents).set({ status: "PROCESSING", attemptCount: sql`${billingWebhookEvents.attemptCount} + 1`, processingStartedAt: now, nextAttemptAt: null, failureCode: null, updatedAt: now })
+      .where(and(eq(billingWebhookEvents.id, candidate.id), eq(billingWebhookEvents.status, "FAILED"), lte(billingWebhookEvents.nextAttemptAt, now), lt(billingWebhookEvents.attemptCount, billingWebhookEvents.maxAttempts)));
+    if (Number(result.meta.changes) !== 1) return null;
+    return this.findById(candidate.id);
+  }
+
   async complete(id: string, status: "PROCESSED" | "IGNORED", at: Date): Promise<void> {
     const result = await this.db.update(billingWebhookEvents).set({ status, processedAt: at, nextAttemptAt: null, failureCode: null, updatedAt: at }).where(and(eq(billingWebhookEvents.id, id), eq(billingWebhookEvents.status, "PROCESSING")));
     if (Number(result.meta.changes) !== 1) throw new DomainConflictError("BILLING_WEBHOOK_COMPLETION_CONFLICT", "Billing webhook changed concurrently.");
@@ -44,6 +55,18 @@ export class D1BillingWebhookRepository implements BillingWebhookRepository {
 
   private async find(provider: string, providerEventId: string) {
     const [row] = await this.db.select().from(billingWebhookEvents).where(and(eq(billingWebhookEvents.provider, provider), eq(billingWebhookEvents.providerEventId, providerEventId))).limit(1);
+    return row ? hydrate(row) : null;
+  }
+
+  private async findById(id: string) {
+    const [row] = await this.db.select().from(billingWebhookEvents).where(eq(billingWebhookEvents.id, id)).limit(1);
+    return row ? hydrate(row) : null;
+  }
+}
+
+type WebhookRow = typeof billingWebhookEvents.$inferSelect;
+
+function hydrate(row: WebhookRow) {
     if (!row) return null;
     const payload = row.normalizedPayload as SerializedEvent;
     return new BillingWebhookEvent({
@@ -62,7 +85,6 @@ export class D1BillingWebhookRepository implements BillingWebhookRepository {
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     });
-  }
 }
 
 type SerializedEvent = Omit<NormalizedBillingEvent, "periodStart" | "periodEnd" | "occurredAt"> & { periodStart: string | null; periodEnd: string | null; occurredAt: string };

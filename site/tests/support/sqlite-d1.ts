@@ -18,6 +18,7 @@ const MIGRATIONS = [
   new URL("../../drizzle/0011_yummy_vin_gonzales.sql", import.meta.url),
   new URL("../../drizzle/0012_old_morph.sql", import.meta.url),
   new URL("../../drizzle/0013_wooden_siren.sql", import.meta.url),
+  new URL("../../drizzle/0014_parallel_spacker_dave.sql", import.meta.url),
 ];
 
 class SQLiteD1PreparedStatement {
