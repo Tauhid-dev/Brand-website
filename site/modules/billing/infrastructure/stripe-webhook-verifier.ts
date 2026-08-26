@@ -1,7 +1,7 @@
 import type { BillingWebhookVerifier } from "../application/webhook-ports.ts";
 import type { BillingEventKind, NormalizedBillingEvent } from "../domain/billing-webhook.ts";
 import { AuthenticationRequiredError, DomainValidationError } from "../../shared/domain/errors.ts";
-import { constantTimeEqual, hmacSha256Hex, sha256Hex } from "../../shared/infrastructure/web-crypto.ts";
+import { constantTimeEqual, hmacSha256Hex, sha256Hex } from "../../shared/application/web-crypto.ts";
 
 export class StripeWebhookVerifier implements BillingWebhookVerifier {
   constructor(private readonly secret: string, private readonly toleranceSeconds = 300) {

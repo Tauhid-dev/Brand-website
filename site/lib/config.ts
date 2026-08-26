@@ -28,17 +28,17 @@ export type SocialLink = {
 export interface BrandConfiguration {
   name: string;
   shortName: string;
-  legalName: string;
-  abn: string;
+  legalName: string | null;
+  abn: string | null;
   tagline: string;
   description: string;
   domain: string;
   country: CountryCode;
   region: string;
   serviceRegion: string;
-  supportEmail: string;
-  salesEmail: string;
-  phone: string;
+  supportEmail: string | null;
+  salesEmail: string | null;
+  phone: string | null;
   currency: CurrencyCode;
   gstEnabled: boolean;
   gst: string;
@@ -49,30 +49,62 @@ export interface BrandConfiguration {
   seo: { title: string; description: string };
 }
 
+function optionalPublicValue(value: string | undefined): string | null {
+  return value?.trim() || null;
+}
+
+function optionalPublicEmail(value: string | undefined, variable: string): string | null {
+  const email = optionalPublicValue(value);
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new Error(`${variable} must be a valid email address.`);
+  }
+  return email;
+}
+
+function publicUrl(value: string | undefined, variable: string, fallback?: string): string {
+  const candidate = optionalPublicValue(value) ?? fallback;
+  if (!candidate) throw new Error(`${variable} is required.`);
+  let url: URL;
+  try { url = new URL(candidate); }
+  catch { throw new Error(`${variable} must be an absolute URL.`); }
+  if (url.protocol !== "https:" && !["localhost", "127.0.0.1"].includes(url.hostname)) {
+    throw new Error(`${variable} must use HTTPS.`);
+  }
+  if (url.username || url.password) throw new Error(`${variable} cannot contain credentials.`);
+  return url.toString().replace(/\/$/, "");
+}
+
+function socialLink(platform: SocialLink["platform"], value: string | undefined): SocialLink | null {
+  const url = optionalPublicValue(value);
+  return url ? { platform, url: publicUrl(url, `NEXT_PUBLIC_${platform.toUpperCase()}_URL`) } : null;
+}
+
+const configuredSocialLinks = [
+  socialLink("linkedin", process.env.NEXT_PUBLIC_LINKEDIN_URL),
+  socialLink("instagram", process.env.NEXT_PUBLIC_INSTAGRAM_URL),
+  socialLink("facebook", process.env.NEXT_PUBLIC_FACEBOOK_URL),
+].filter((value): value is SocialLink => value !== null);
+
 export const brand = {
   name: "Zuno Pixel",
   shortName: "Zuno Pixel",
-  legalName: "Legal entity to be configured",
-  abn: "ABN to be configured",
+  legalName: optionalPublicValue(process.env.NEXT_PUBLIC_LEGAL_NAME),
+  abn: optionalPublicValue(process.env.NEXT_PUBLIC_ABN),
   tagline: "Get found. Build trust. Book more work.",
   description:
     "The complete local-business growth system that turns searches and enquiries into booked customers.",
-  domain: "https://www.example.com",
+  domain: publicUrl(process.env.NEXT_PUBLIC_SITE_URL, "NEXT_PUBLIC_SITE_URL", "https://zunopixel.com.au"),
   country: "AU",
   region: "Australia",
   serviceRegion: "Australian local businesses",
-  supportEmail: "support@example.com",
-  salesEmail: "hello@example.com",
-  phone: "1300 000 000",
+  supportEmail: optionalPublicEmail(process.env.NEXT_PUBLIC_SUPPORT_EMAIL, "NEXT_PUBLIC_SUPPORT_EMAIL"),
+  salesEmail: optionalPublicEmail(process.env.NEXT_PUBLIC_SALES_EMAIL, "NEXT_PUBLIC_SALES_EMAIL"),
+  phone: optionalPublicValue(process.env.NEXT_PUBLIC_PHONE),
   currency: "AUD",
   gstEnabled: true,
   gst: PUBLIC_PRICE_TAX_DISCLOSURE,
   logo: { mark: "/favicon.svg", wordmark: "/favicon.svg" },
-  socialLinks: [
-    { platform: "linkedin", url: "" },
-    { platform: "instagram", url: "" },
-    { platform: "facebook", url: "" },
-  ],
+  socialLinks: configuredSocialLinks,
   analytics: {
     ga4MeasurementId: process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID ?? "",
   },

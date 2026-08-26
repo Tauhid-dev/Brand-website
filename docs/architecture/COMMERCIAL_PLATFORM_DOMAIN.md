@@ -1,6 +1,6 @@
 # Zuno Pixel commercial platform domain and database design
 
-Status: target design implemented through Phase 14. Phases 2–9 implement the
+Status: target design implemented and release-audited through Phase 17. Phases 2–9 implement the
 commercial domain, operational portal and versioned integration boundary;
 Phase 10 adds the configured billing-webhook adapter and launch hardening, and
 Phase 11 completes provider-neutral billing operations and lifecycle controls.
@@ -11,7 +11,12 @@ contracts, bounded and validated input, actor-scoped idempotency and indexed
 cursor collection reads. Phase 14 provides a configuration-gated HTTPS agent
 provider adapter, service-authenticated link synchronization and reconciliation,
 recoverable provisioning leases and immutable attempt history. No HTTP
-controller owns commercial or provider workflow policy.
+controller owns commercial or provider workflow policy. Phase 15 adds the
+reviewed Stripe adapter without changing internal commercial authority; Phase
+16 adds production recovery, retention and immutable maintenance evidence; and
+Phase 17 verifies inward-only, acyclic module dependencies in automation. The
+marketing lead endpoint likewise delegates delivery through an application port
+and configuration-gated infrastructure adapter.
 
 ## Architecture decision
 

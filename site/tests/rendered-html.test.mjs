@@ -21,6 +21,7 @@ test("server-renders the branded homepage", async () => {
   assert.match(html, /AI receptionist/i);
   assert.match(html, /Zuno Pixel/);
   assert.doesNotMatch(html, /AI-Magnet|AI Magnet|ai-magnet/i);
+  assert.doesNotMatch(html, /example\.com|to be configured|1300 000 000/i);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
 

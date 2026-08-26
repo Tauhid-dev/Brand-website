@@ -30,13 +30,19 @@ This starter does not use `wrangler.jsonc`.
 
 ## Versioned API
 
-Phases 9–10 expose purpose-specific JSON contracts under `/api/v1`:
+Phases 9–16 expose and harden purpose-specific JSON contracts under `/api/v1`:
 
 - public plan and promotion validation endpoints;
 - signed-in customer account, entitlement and preference endpoints;
 - server-authorized administration endpoints for commercial records;
 - scoped service-to-service agent integration endpoints; and
 - a configuration-gated, signature-verified billing webhook boundary.
+
+Phase 17 adds no new versioned commercial endpoint. It makes the existing
+`/api/audit` marketing-lead boundary production-safe: the route validates and
+rate-limits input, calls a typed application port, and fails closed unless an
+HTTPS `LEAD_DELIVERY_URL` and runtime-only `LEAD_DELIVERY_TOKEN` are configured.
+It never reports delivery until the configured destination returns success.
 
 The machine-readable OpenAPI 3.1 contract is available at
 `/api/v1/openapi.json`. See `docs/api/REST_API_V1.md` for the endpoint inventory,
@@ -137,21 +143,28 @@ actions tied to the current ChatGPT user. Leave public content anonymous.
 - `npm run build`: verify the vinext build output
 - `npm test`: production build plus domain, application, migration, repository
   and rendered-page tests
+- `node --experimental-transform-types --test tests/phase-17-architecture.test.ts`:
+  run the inward-dependency, cycle, persistence-boundary and release-placeholder gate
 - `npm run db:generate`: generate Drizzle migrations after schema changes
 
 ## Database workflow
 
 Migrations `drizzle/0000_uneven_violations.sql` through
-`drizzle/0013_wooden_siren.sql` establish customer/catalogue, versioned
+`drizzle/0014_parallel_spacker_dave.sql` establish customer/catalogue, versioned
 pricing/quotes, discounts/promotions, subscription/entitlement/billing,
 identity/RBAC/audit, onboarding/operations/notifications, API security and the
 billing-webhook/public-rate-limit hardening records, Phase 11 billing
 operations, Phase 12 notification delivery history/recovery, Phase 13 API
-cursor-query indexes, and Phase 14 agent job leases and immutable provider
-attempt history, plus Phase 15 provider price/checkout references and initial
-subscription-provider linking, in order. Apply them through the Sites/Cloudflare environment for the target
+cursor-query indexes, Phase 14 agent job leases and immutable provider attempt
+history, Phase 15 provider price/checkout references and initial
+subscription-provider linking, and Phase 16 immutable maintenance/recovery
+evidence, in order. Apply them through the Sites/Cloudflare environment for the target
 stage. Do not edit an applied migration; change `db/schema.ts` and generate the
 next forward-only migration.
+
+The complete environment inventory is in `.env.example`. Empty values are
+intentional; secrets must be supplied through the hosting secret store and must
+never be committed.
 
 Development fixtures include clearly fictional catalogue/customer examples and
 the four initial AUD price sets. They are exported separately from production

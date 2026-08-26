@@ -15,7 +15,7 @@ import type { ServicePrincipal, ServiceScope } from "@/modules/api/domain/api-se
 import { CryptoUuidGenerator, SystemClock } from "@/modules/shared/application/ports";
 import type { RequestActor, RequestContext } from "@/modules/shared/application/request-context";
 import { AuthenticationRequiredError } from "@/modules/shared/domain/errors";
-import { sha256Hex } from "@/modules/shared/infrastructure/web-crypto";
+import { sha256Hex } from "@/modules/shared/application/web-crypto";
 import { D1PortalReadRepository } from "@/modules/portal/infrastructure/d1-portal-read-repository";
 
 export type ApiRuntime = Awaited<ReturnType<typeof createApiRuntime>>;

@@ -1,8 +1,7 @@
 import type { Clock, IdGenerator } from "./ports.ts";
+import type { RequestActor } from "../domain/request-actor.ts";
 
-export type RequestActor =
-  | { type: "ANONYMOUS" }
-  | { type: "CUSTOMER" | "ADMIN" | "SERVICE" | "SYSTEM"; id: string };
+export type { RequestActor } from "../domain/request-actor.ts";
 
 export type RequestContext = {
   requestId: string;

@@ -5,7 +5,7 @@ import { RequestRateLimitService } from "../modules/api/application/api-security
 import { D1ApiSecurityRepository } from "../modules/api/infrastructure/d1-api-security-repository.ts";
 import { PayloadTooLargeError, RateLimitExceededError, ServiceUnavailableError } from "../modules/shared/domain/errors.ts";
 import { mapApplicationError } from "../modules/shared/presentation/api-primitives.ts";
-import { sha256Hex } from "../modules/shared/infrastructure/web-crypto.ts";
+import { sha256Hex } from "../modules/shared/application/web-crypto.ts";
 import { repositoryDatabase } from "./support/sqlite-d1.ts";
 
 const NOW = new Date("2026-08-24T12:00:00.000Z");

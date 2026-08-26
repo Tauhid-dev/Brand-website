@@ -10,6 +10,9 @@ Commercial platform planning is documented in
 [`docs/architecture/COMMERCIAL_PLATFORM_DOMAIN.md`](docs/architecture/COMMERCIAL_PLATFORM_DOMAIN.md),
 with controlled delivery stages in
 [`docs/IMPLEMENTATION_PHASES.md`](docs/IMPLEMENTATION_PHASES.md).
+The Phase 17 code and architecture audit is recorded in
+[`docs/phase-reports/PHASE_17_RELEASE_READINESS.md`](docs/phase-reports/PHASE_17_RELEASE_READINESS.md);
+production launch remains conditional on its external configuration checklist.
 
 Project Genesis is a reusable, deterministic foundation generator for serious
 software projects. Given only a project name, a brief description, and optional

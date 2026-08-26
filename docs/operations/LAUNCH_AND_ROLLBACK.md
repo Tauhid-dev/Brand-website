@@ -1,70 +1,83 @@
-# Phase 10 launch and rollback runbook
+# Production launch and rollback runbook
 
 ## Release gate
 
-Do not expose the billing webhook until the production build, full automated
-suite, migration rehearsal, browser journey check and authorization/security
-review pass for the exact commit being released. The production dependency
-advisory scan must also report no high-severity finding. Confirm the legal, contact,
-domain, CRM delivery and analytics placeholders in `docs/ZUNO_PIXEL_SITE.md` are
-separately resolved before a public marketing launch.
+Release only an exact reviewed commit that passes the root Genesis gates, site
+lint and type-check, full production build/test suite, clean and upgrade
+migration rehearsals, architecture boundary gate and high-severity dependency
+audit. The Phase 17 assessment is code-GO but deployment-CONDITIONAL: every
+external item below must be owned, recorded and verified for the target stage.
+
+## Required external configuration
+
+- Configure the production D1 `DB` binding, apply migrations 0000 through 0014
+  in order, and record a verified backup/restore point.
+- Confirm `NEXT_PUBLIC_SITE_URL`, legal entity, ABN, contact details, approved
+  brand assets, GST/pricing disclosures and Australian legal review.
+- Configure `LEAD_DELIVERY_URL` and `LEAD_DELIVERY_TOKEN`; prove destination
+  idempotency, consent/retention handling and accepted/rejected/timeout paths.
+- Configure dispatch/Sites access policy, administrator bootstrap and role
+  assignments. Confirm dispatcher session, MFA and suspicious-login controls.
+- Configure Stripe webhook and outbound credentials only if billing is enabled.
+  A live secret also requires `STRIPE_LIVE_ENABLED=true` after approval.
+- Configure the agent endpoint/token and issue the minimum scoped service
+  credential only if external provisioning is enabled.
+- Configure notification providers, analytics consent, Search Console, DNS,
+  social profiles, WhatsApp and operational support destinations as applicable.
+- Configure monitoring, alert routing, scheduled maintenance and a D1 backup
+  frequency that meets the approved RPO/RTO.
+
+Secrets belong only in the hosting secret store. Never place them in source,
+environment examples, build arguments, tickets, logs or audit snapshots.
 
 ## Before deployment
 
-1. Save a deployable version for the exact reviewed commit and retain the
-   previous known-good version identifier.
-2. Back up the production D1 database and record the migration level and backup
-   restore procedure.
-3. Apply forward migration `0007_regular_shadowcat.sql` in staging, then
-   production, before routing webhook traffic to the new build.
-4. Configure `STRIPE_WEBHOOK_SECRET` in the hosting secret store only. Never put
-   the value in source, logs, build arguments, tickets or audit snapshots.
-5. Configure the provider endpoint as
-   `/api/v1/webhooks/billing/stripe`; send a provider test event and verify one
-   `billing_webhook_events` row and the matching immutable audit event.
-6. Verify SIWC access, administrator permissions, service credential scopes,
-   public rate limits, same-origin write rejection and response headers in the
-   target environment.
-
-Outbound payment execution is not launchable from this repository until a
-separately reviewed provider adapter and credentials are configured. Webhook
-intake reconciles existing provider facts and never substitutes a fake charge.
+1. Save the exact commit as a deployable Sites version and retain the previous
+   known-good version identifier.
+2. Record the current migration journal and D1 database identifier; create and
+   verify a provider-supported backup/export.
+3. Rehearse the complete migration chain on an empty database and representative
+   restored Phase 10 and Phase 15 snapshots. Run `PRAGMA foreign_key_check` and
+   critical record-count comparisons.
+4. Apply every unapplied forward migration through 0014 before switching traffic.
+5. Run deployed smoke tests for public navigation, SIWC customer/admin ownership,
+   exact administrator permissions, service scopes, same-origin writes, security
+   headers, lead delivery and each enabled provider.
+6. Send a signed Stripe test event when billing intake is enabled and verify one
+   normalized inbox row plus its immutable audit event. Never store the raw body.
+7. Review `/admin/operations` and `GET /api/v1/admin/system/readiness`; do not
+   launch with terminal work or an unexplained degraded state.
 
 ## Monitoring and reconciliation
 
-Monitor webhook HTTP status, `FAILED` inbox rows, retry age, duplicate/conflict
-counts, `PROCESSING` rows older than five minutes, invoice/subscription divergence,
-public/service 429 rates and unexpected
-5xx responses. Alert on a failed row whose `next_attempt_at` is overdue or whose
-attempt count reached `max_attempts`. Review the immutable audit event using its
-request ID; do not copy raw provider bodies into operational notes.
+Monitor unexpected 5xx and 429 responses, lead-delivery failures, billing
+webhook terminal/retry age, expired notification/agent leases, invoice and
+subscription divergence, operational queue age, maintenance failures and the
+last successful maintenance time. Correlate incidents with safe request IDs;
+do not copy raw provider responses or personal form contents into notes.
 
-Schedule index-backed deletion of expired `api_rate_limits`,
-`service_rate_limits` and expired `idempotency_keys` according to the approved
-retention policy. Do not delete billing webhook events until commercial record
-retention and reconciliation requirements are approved.
+Run bounded system maintenance on the approved schedule. It may expire technical
+idempotency/rate-limit state, redact old audit network metadata and reclaim ready
+billing events; it does not delete customer or commercial history.
 
 ## Application rollback
 
-1. Pause provider webhook delivery or keep provider retries enabled while the
-   endpoint is unavailable; do not acknowledge unprocessed events manually.
-2. Redeploy the previous known-good saved application version.
-3. Leave migration 0007 and its data in place. It is additive and compatible
-   with the previous application; schema rollback is not required.
-4. If the previous build must run for an extended period, keep webhook traffic
-   paused because that build has no verified inbox handler.
-5. After a corrected build is deployed, replay provider deliveries and verify
-   deduplication, terminal outcomes and commercial state. Manually reconcile
-   rows that reached `max_attempts` before resuming ordinary monitoring.
+1. Pause risky external writes or provider delivery where practical while
+   preserving provider retries and durable inbox evidence.
+2. Redeploy the previous known-good application version only after confirming it
+   is compatible with the current additive schema.
+3. Leave applied migrations and their data in place. Do not run reverse SQL or
+   edit an applied migration.
+4. If compatibility is uncertain, disable writes and apply a reviewed forward
+   repair rather than forcing state directly in D1.
+5. Replay/reconcile provider work through application services, verify
+   deduplication and readiness, then restore ordinary traffic.
 
-Never force a subscription or invoice state directly in the database. Repair
-commercial state through the reusable application services so entitlements,
-queues and audit history remain consistent.
+## Migration or data failure
 
-## Migration failure
-
-Stop before switching application traffic. Restore the verified D1 backup only
-if the database migration itself caused data loss or corruption. Otherwise fix
-forward with a new migration; never edit or rename migration 0007 after it has
-been applied. Record the decision, affected environment, timestamps and backup
-identifier in the release incident record.
+Stop before switching traffic and preserve the affected database. Restore only
+from the verified backup into a new D1 database, validate foreign keys and
+critical business records, then perform an explicit binding cutover. Record the
+decision, incident times, commit, migration level, backup identifier, record
+counts and recovery objective result. Never force a subscription, invoice,
+entitlement or queue state directly in the database.

@@ -7,6 +7,8 @@ declare global {
       STRIPE_LIVE_ENABLED?: string;
       AGENT_PLATFORM_BASE_URL?: string;
       AGENT_PLATFORM_ACCESS_TOKEN?: string;
+      LEAD_DELIVERY_URL?: string;
+      LEAD_DELIVERY_TOKEN?: string;
     }
   }
 
@@ -17,6 +19,8 @@ declare global {
     STRIPE_LIVE_ENABLED?: string;
     AGENT_PLATFORM_BASE_URL?: string;
     AGENT_PLATFORM_ACCESS_TOKEN?: string;
+    LEAD_DELIVERY_URL?: string;
+    LEAD_DELIVERY_TOKEN?: string;
   }
 }
 

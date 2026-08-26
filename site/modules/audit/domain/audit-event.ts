@@ -1,6 +1,6 @@
 import { DomainValidationError } from "../../shared/domain/errors.ts";
 import { EntityId, requireText } from "../../shared/domain/value-objects.ts";
-import type { RequestActor } from "../../shared/application/request-context.ts";
+import type { RequestActor } from "../../shared/domain/request-actor.ts";
 
 export const AUDIT_ACTIONS = {
   customerCreated: "CUSTOMER_CREATED",

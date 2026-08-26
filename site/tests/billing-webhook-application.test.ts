@@ -9,7 +9,7 @@ import { D1BillingProviderReferenceRepository } from "../modules/billing/infrast
 import { StripeWebhookVerifier } from "../modules/billing/infrastructure/stripe-webhook-verifier.ts";
 import { BillingWebhookEvent } from "../modules/billing/domain/billing-webhook.ts";
 import { D1SubscriptionRepository } from "../modules/subscription/infrastructure/d1-subscription-repository.ts";
-import { hmacSha256Hex } from "../modules/shared/infrastructure/web-crypto.ts";
+import { hmacSha256Hex } from "../modules/shared/application/web-crypto.ts";
 import { EntityId } from "../modules/shared/domain/value-objects.ts";
 import { repositoryDatabase } from "./support/sqlite-d1.ts";
 import { RecordingAudit } from "./support/audit.ts";
