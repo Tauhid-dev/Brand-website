@@ -141,7 +141,13 @@ export function postgresPlaceholders(sql: string): string {
       output += character;
     }
   }
-  return output;
+  return normalizeConflictTargets(output);
+}
+
+function normalizeConflictTargets(sql: string): string {
+  return sql.replace(/\bon conflict\s*\(([^)]+)\)/gi, (target, columns: string) =>
+    target.replace(columns, columns.replace(/"[^"]+"\."([^"]+)"/g, '"$1"')),
+  );
 }
 
 function positiveInteger(value: string | undefined, fallback: number, minimum: number, maximum: number) {

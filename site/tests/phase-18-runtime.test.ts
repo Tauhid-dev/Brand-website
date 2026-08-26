@@ -34,6 +34,13 @@ test("PostgreSQL adapter converts only real SQLite placeholders", () => {
   assert.equal(postgresPlaceholders(`select '?' as literal, \"question?\" from \`items\` where a = ? and b = ?`), `select '?' as literal, \"question?\" from \"items\" where a = $1 and b = $2`);
 });
 
+test("PostgreSQL adapter removes D1 table qualifiers only from conflict targets", () => {
+  assert.equal(
+    postgresPlaceholders('insert into "customers" ("id") values (?) on conflict ("customers"."id") do update set "id" = ?'),
+    'insert into "customers" ("id") values ($1) on conflict ("id") do update set "id" = $2',
+  );
+});
+
 test("standalone sessions are encrypted, expiring and reject tampering", async () => {
   assert.equal(sessionKey(SECRET).byteLength, 32);
   const token = await sealStandaloneSession({ provider: "company-oidc", externalSubject: "subject-1", email: "admin@example.com", displayName: "Admin", csrfToken: "csrf" }, SECRET, 300);
