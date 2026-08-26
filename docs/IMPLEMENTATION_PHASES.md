@@ -177,7 +177,8 @@ requires a separate explicit runtime enablement flag.
 
 ## Phase 16 — Production security, reliability and migration hardening
 
-Status: not started.
+Status: complete on the Phase 16 feature branch; verify merged implementation
+from code before relying on this informational marker.
 
 Complete threat-led security controls, operational recovery, observability,
 data retention, concurrency and failure testing, migration rehearsal and

@@ -55,6 +55,8 @@ errors 500.
 | `GET /admin/invoices` | ChatGPT SIWC admin | `BILLING_READ` |
 | `GET /admin/notifications` | ChatGPT SIWC admin | `OPERATIONS_READ` |
 | `GET /admin/audit-events` | ChatGPT SIWC admin | `AUDIT_READ` |
+| `GET /admin/system/readiness` | ChatGPT SIWC admin | `OPERATIONS_READ` |
+| `POST /admin/system/maintenance` | ChatGPT SIWC admin + idempotency key | `OPERATIONS_WRITE` |
 | `POST /admin/service-credentials` | ChatGPT SIWC admin | `ADMIN_USER_MANAGE` |
 | `POST /admin/service-credentials/{id}/rotate` | ChatGPT SIWC admin | `ADMIN_USER_MANAGE` |
 | `DELETE /admin/service-credentials/{id}` | ChatGPT SIWC admin | `ADMIN_USER_MANAGE` |

@@ -13,6 +13,7 @@ export function adminRoutePermission(method: AdminApiMethod, segments: readonly 
     if (matches(segments, "subscriptions") || matches(segments, "subscriptions", "*")) return "SUBSCRIPTION_READ";
     if (matches(segments, "notifications")) return "OPERATIONS_READ";
     if (matches(segments, "audit-events")) return "AUDIT_READ";
+    if (matches(segments, "system", "readiness")) return "OPERATIONS_READ";
   }
   if (method === "POST") {
     if (matches(segments, "customers")) return "CUSTOMER_WRITE";
@@ -25,6 +26,7 @@ export function adminRoutePermission(method: AdminApiMethod, segments: readonly 
     if (matches(segments, "discounts") || matches(segments, "promotion-codes")) return "DISCOUNT_WRITE";
     if (matches(segments, "subscriptions") || matches(segments, "subscriptions", "*", "operations")) return "SUBSCRIPTION_WRITE";
     if (matches(segments, "service-credentials") || matches(segments, "service-credentials", "*", "rotate")) return "ADMIN_USER_MANAGE";
+    if (matches(segments, "system", "maintenance")) return "OPERATIONS_WRITE";
   }
   if (method === "PATCH" && matches(segments, "subscriptions", "*")) return "SUBSCRIPTION_WRITE";
   if (method === "DELETE" && matches(segments, "service-credentials", "*")) return "ADMIN_USER_MANAGE";

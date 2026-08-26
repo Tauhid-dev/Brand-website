@@ -81,6 +81,9 @@ export const AUDIT_ACTIONS = {
   billingWebhookProcessed: "BILLING_WEBHOOK_PROCESSED",
   billingWebhookIgnored: "BILLING_WEBHOOK_IGNORED",
   billingWebhookFailed: "BILLING_WEBHOOK_FAILED",
+  billingWebhookRecovered: "BILLING_WEBHOOK_RECOVERED",
+  systemMaintenanceCompleted: "SYSTEM_MAINTENANCE_COMPLETED",
+  systemMaintenanceFailed: "SYSTEM_MAINTENANCE_FAILED",
 } as const;
 
 export type AuditJson = null | boolean | number | string | AuditJson[] | { [key: string]: AuditJson };

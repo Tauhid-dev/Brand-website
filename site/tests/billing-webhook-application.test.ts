@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { ProcessBillingWebhookService } from "../modules/billing/application/billing-webhook-service.ts";
+import { RecoverPendingBillingWebhookService } from "../modules/billing/application/billing-webhook-recovery-service.ts";
 import { ReconcileBillingEventService } from "../modules/billing/application/billing-event-reconciliation-service.ts";
 import { D1BillingRepository } from "../modules/billing/infrastructure/d1-billing-repository.ts";
 import { D1BillingWebhookRepository } from "../modules/billing/infrastructure/d1-billing-webhook-repository.ts";
@@ -57,6 +58,21 @@ test("webhook claims reject concurrent processing and reclaim an interrupted sta
   const reclaimed = await repository.claim(candidate("b0000000-0000-4000-8000-000000000203", "request-3"), new Date(NOW.getTime() + 6 * 60_000));
   assert.equal(reclaimed.kind, "PROCESS");
   assert.equal(reclaimed.event.props.attemptCount, 2);
+  context.client.close();
+});
+
+test("scheduled recovery reclaims a failed durable webhook without provider redelivery", async () => {
+  const context = setup();
+  const repository = new D1BillingWebhookRepository(context.database);
+  const event = new BillingWebhookEvent({ id: new EntityId("b0000000-0000-4000-8000-000000000250"), event: { provider: "stripe", providerEventId: "evt_recovery", providerEventType: "unsupported.test", kind: "UNSUPPORTED", externalSubscriptionId: null, externalInvoiceId: null, periodStart: null, periodEnd: null, occurredAt: NOW }, payloadHash: "d".repeat(64), status: "PROCESSING", attemptCount: 1, maxAttempts: 5, receivedAt: NOW, processingStartedAt: NOW, processedAt: null, nextAttemptAt: null, failureCode: null, requestId: "request-recovery", createdAt: NOW, updatedAt: NOW });
+  assert.equal((await repository.claim(event, NOW)).kind, "PROCESS");
+  await repository.fail(event.props.id.value, "PROVIDER_OUTAGE", NOW, NOW);
+  const result = await new RecoverPendingBillingWebhookService(repository, { reconcile: async () => "IGNORED" }, context.clock, context.audit).execute();
+  assert.equal(result, "IGNORED");
+  const row = context.client.database.prepare("select status,attempt_count from billing_webhook_events where id=?").get(event.props.id.value);
+  assert.equal(row?.status, "IGNORED");
+  assert.equal(row?.attempt_count, 2);
+  assert.equal(context.audit.records.some((record) => record.action === "BILLING_WEBHOOK_RECOVERED"), true);
   context.client.close();
 });
 

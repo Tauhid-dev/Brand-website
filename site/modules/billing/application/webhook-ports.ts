@@ -11,6 +11,7 @@ export type BillingWebhookClaim =
 
 export interface BillingWebhookRepository {
   claim(event: BillingWebhookEvent, now: Date): Promise<BillingWebhookClaim>;
+  claimNextReady(now: Date): Promise<BillingWebhookEvent | null>;
   complete(id: string, status: "PROCESSED" | "IGNORED", at: Date): Promise<void>;
   fail(id: string, failureCode: string, nextAttemptAt: Date | null, at: Date): Promise<void>;
 }
